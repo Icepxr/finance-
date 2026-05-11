@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FinanceOS</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237c3aed'/%3E%3Ctext x='16' y='22' font-size='18' font-weight='700' font-family='sans-serif' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#7c3aed">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -195,13 +196,24 @@
       <h2 style="font-size:1rem;font-weight:700">📷 Scan Slip</h2>
       <button onclick="closeSlipModal()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:.25rem .6rem;cursor:pointer">✕</button>
     </div>
-    <div id="slip-upload-area" onclick="document.getElementById('slip-file').click()"
-         style="border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:1rem"
-         onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
-      <div style="font-size:2rem;margin-bottom:.5rem">📎</div>
-      <div style="font-size:.85rem;color:var(--text);font-weight:500">คลิกหรือลากไฟล์มาวางที่นี่</div>
-      <div style="font-size:.72rem;color:var(--muted);margin-top:.25rem">รองรับ JPG, PNG, WEBP — ถ่ายจากกล้องได้เลย</div>
-      <input type="file" id="slip-file" accept="image/*" capture="environment" style="display:none" onchange="previewSlip(this)">
+    <div id="slip-upload-area"
+         style="border:2px dashed var(--border);border-radius:12px;padding:1.5rem;text-align:center;transition:border-color .2s,background .2s;margin-bottom:1rem"
+         ondragover="slipDragOver(event,this)" ondragleave="slipDragLeave(this)" ondrop="slipDrop(event,this)">
+      <div style="font-size:2rem;margin-bottom:.4rem">🧾</div>
+      <div style="font-size:.85rem;color:var(--text);font-weight:500">ลากรูปสลิปมาวางที่นี่</div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">หรือเลือกจากปุ่มด้านล่าง — JPG, PNG, WEBP</div>
+      <div style="display:flex;gap:.5rem;margin-top:.85rem;justify-content:center">
+        <button onclick="document.getElementById('slip-file-gallery').click()"
+                style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.45rem .9rem;font-size:.8rem;cursor:pointer;display:flex;align-items:center;gap:.35rem">
+          🖼 คลังรูปภาพ
+        </button>
+        <button onclick="document.getElementById('slip-file-camera').click()"
+                style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.45rem .9rem;font-size:.8rem;cursor:pointer;display:flex;align-items:center;gap:.35rem">
+          📷 กล้อง
+        </button>
+      </div>
+      <input type="file" id="slip-file-gallery" accept="image/*" style="display:none" onchange="previewSlip(this)">
+      <input type="file" id="slip-file-camera" accept="image/*" capture="environment" style="display:none" onchange="previewSlip(this)">
     </div>
     <div id="slip-preview" style="display:none;margin-bottom:1rem">
       <img id="slip-img" style="width:100%;border-radius:12px;max-height:260px;object-fit:contain;background:var(--surface2)">
@@ -558,9 +570,13 @@ function openEditTransaction(id) {
 // ============================================================
 // SLIP SCANNER — Gemini Vision
 // ============================================================
+let currentSlipFile = null;
+
 function openSlipModal() {
   slipData = null;
-  document.getElementById('slip-file').value = '';
+  currentSlipFile = null;
+  document.getElementById('slip-file-gallery').value = '';
+  document.getElementById('slip-file-camera').value = '';
   document.getElementById('slip-preview').style.display = 'none';
   document.getElementById('slip-result').style.display = 'none';
   document.getElementById('slip-scanning').style.display = 'none';
@@ -572,9 +588,31 @@ function openSlipModal() {
 
 function closeSlipModal() { document.getElementById('modal-slip').classList.remove('open'); }
 
+function slipDragOver(e, el) {
+  e.preventDefault();
+  el.style.borderColor = 'var(--accent)';
+  el.style.background = 'rgba(167,139,250,.06)';
+}
+function slipDragLeave(el) {
+  el.style.borderColor = 'var(--border)';
+  el.style.background = '';
+}
+function slipDrop(e, el) {
+  e.preventDefault();
+  slipDragLeave(el);
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) showSlipFile(file);
+  else toast('รองรับเฉพาะไฟล์รูปภาพ', false);
+}
+
 function previewSlip(input) {
   const file = input.files[0];
   if (!file) return;
+  showSlipFile(file);
+}
+
+function showSlipFile(file) {
+  currentSlipFile = file;
   const reader = new FileReader();
   reader.onload = e => {
     document.getElementById('slip-img').src = e.target.result;
@@ -591,7 +629,7 @@ function previewSlip(input) {
 async function scanSlip() {
   const key = CONFIG.geminiKey;
   if (!key) { toast('ใส่ Gemini API Key ใน Settings ก่อน', false); return; }
-  const file = document.getElementById('slip-file').files[0];
+  const file = currentSlipFile;
   if (!file) { toast('เลือกไฟล์ก่อน', false); return; }
 
   document.getElementById('slip-scanning').style.display = 'block';
@@ -1481,12 +1519,47 @@ document.addEventListener('DOMContentLoaded', () => {
     if (b) b.dataset.label = b.textContent;
   });
   renderDashboard();
-  // auto sync จาก Sheet ถ้ามี API — ไม่รอ ทำ background
   autoSyncOnLoad();
   if (!state.transactions.length && !state.investments.length) {
     setTimeout(() => toast('👋 ใส่ Apps Script URL ใน Settings เพื่อ sync ข้อมูล หรือกด Load Demo Data'), 1000);
   }
+  initServiceWorker();
 });
+
+// ============================================================
+// SERVICE WORKER + WEB SHARE TARGET
+// ============================================================
+function initServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+
+  // รับรูปที่แชร์มาจากแอปอื่น (เมื่อแอปเปิดอยู่แล้ว)
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data?.type === 'SHARED_IMAGE') openSlipFromShared(e.data.dataURL);
+  });
+
+  // รับรูปที่แชร์มาตอนแอปยังปิดอยู่ (เปิดแอปจากการแชร์)
+  navigator.serviceWorker.ready.then(async () => {
+    try {
+      const cache = await caches.open('financeos-share-v1');
+      const res = await cache.match('pending-share');
+      if (res) {
+        const { dataURL } = await res.json();
+        await cache.delete('pending-share');
+        openSlipFromShared(dataURL);
+      }
+    } catch {}
+  });
+}
+
+function openSlipFromShared(dataURL) {
+  fetch(dataURL).then(r => r.blob()).then(blob => {
+    const mime = blob.type || 'image/jpeg';
+    const file = new File([blob], 'shared-slip.jpg', { type: mime });
+    openSlipModal();
+    setTimeout(() => showSlipFile(file), 150);
+  }).catch(() => toast('ไม่สามารถโหลดรูปที่แชร์มาได้', false));
+}
 </script>
 </body>
 </html>
