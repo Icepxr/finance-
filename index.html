@@ -1523,43 +1523,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!state.transactions.length && !state.investments.length) {
     setTimeout(() => toast('👋 ใส่ Apps Script URL ใน Settings เพื่อ sync ข้อมูล หรือกด Load Demo Data'), 1000);
   }
-  initServiceWorker();
 });
-
-// ============================================================
-// SERVICE WORKER + WEB SHARE TARGET
-// ============================================================
-function initServiceWorker() {
-  if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
-
-  // รับรูปที่แชร์มาจากแอปอื่น (เมื่อแอปเปิดอยู่แล้ว)
-  navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data?.type === 'SHARED_IMAGE') openSlipFromShared(e.data.dataURL);
-  });
-
-  // รับรูปที่แชร์มาตอนแอปยังปิดอยู่ (เปิดแอปจากการแชร์)
-  navigator.serviceWorker.ready.then(async () => {
-    try {
-      const cache = await caches.open('financeos-share-v1');
-      const res = await cache.match('pending-share');
-      if (res) {
-        const { dataURL } = await res.json();
-        await cache.delete('pending-share');
-        openSlipFromShared(dataURL);
-      }
-    } catch {}
-  });
-}
-
-function openSlipFromShared(dataURL) {
-  fetch(dataURL).then(r => r.blob()).then(blob => {
-    const mime = blob.type || 'image/jpeg';
-    const file = new File([blob], 'shared-slip.jpg', { type: mime });
-    openSlipModal();
-    setTimeout(() => showSlipFile(file), 150);
-  }).catch(() => toast('ไม่สามารถโหลดรูปที่แชร์มาได้', false));
-}
 </script>
 </body>
 </html>
