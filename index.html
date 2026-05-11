@@ -41,6 +41,42 @@
   .main-content{flex:1;overflow-y:auto;padding:1.5rem;max-height:100vh}
   .fab{display:none;position:fixed;bottom:1.5rem;right:1.5rem;z-index:50;width:56px;height:56px;border-radius:50%;background:var(--accent2);color:#fff;font-size:1.5rem;border:none;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(124,58,237,.4)}
   @media(max-width:768px){#sidebar{position:fixed;left:0;top:0;bottom:0;z-index:60;transform:translateX(-100%)}.main-content{padding:1rem}.fab{display:flex}#menu-btn{display:flex!important}}
+
+  /* ── Responsive grid utilities ─────────────────── */
+  .r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .rstat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem}
+
+  /* iPhone (≤640px) ─────────────────────────────── */
+  @media(max-width:640px){
+    /* grids → single column */
+    .r2{grid-template-columns:1fr}
+    /* stat cards → 2×2 grid */
+    .rstat{grid-template-columns:1fr 1fr}
+    /* header label text hidden — icon only */
+    .hl{display:none}
+    /* modal → bottom sheet */
+    .modal-overlay{align-items:flex-end;padding:0}
+    .modal{border-radius:20px 20px 0 0;max-height:92vh;overflow-y:auto;width:100%;max-width:100%}
+    /* chart height compact */
+    .ch{height:160px!important}
+    /* content padding tighter */
+    .main-content{padding:.75rem!important}
+    /* stat number smaller */
+    .stat-card [id^="stat-"]{font-size:1.4rem!important}
+    /* hide less important header btn on tiny screens */
+    #btn-sync{display:none}
+    /* page title size */
+    #page-title{font-size:1.05rem!important}
+  }
+
+  /* iPad portrait (641px–1024px) ─────────────────── */
+  @media(min-width:641px) and (max-width:1024px){
+    .rstat{grid-template-columns:repeat(2,1fr)}
+    .ch{height:180px!important}
+  }
+
+  /* Safe area padding for iPhone notch/home bar ──── */
+  .main-content{padding-bottom:max(1.5rem,env(safe-area-inset-bottom))}
   .tx-row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:.75rem;padding:.85rem 1rem;border-radius:12px;background:rgba(255,255,255,0.03);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(167,139,250,0.10);transition:background .2s,border-color .2s,box-shadow .2s}
   .tx-row:hover{background:rgba(167,139,250,0.07);border-color:rgba(167,139,250,0.22)}
   .tx-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
@@ -151,24 +187,24 @@ input:focus,select:focus,textarea:focus{
       <button id="menu-btn" onclick="openSidebar()" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:.4rem .6rem;cursor:pointer;font-size:1.1rem">☰</button>
       <h1 id="page-title" style="font-size:1.25rem;font-weight:700">Dashboard</h1>
     </div>
-    <div style="display:flex;gap:.6rem;align-items:center">
-      <button id="btn-sync" onclick="syncFromSheet()" class="btn-ghost" style="font-size:.78rem;padding:.45rem .9rem">☁️ Sync from Sheet</button>
-      <button class="btn-ghost" onclick="openSlipModal()" style="font-size:.78rem;padding:.45rem .9rem">📷 Scan Slip</button>
-      <button class="btn-primary" onclick="openModal()">+ Add Transaction</button>
+    <div style="display:flex;gap:.5rem;align-items:center">
+      <button id="btn-sync" onclick="syncFromSheet()" class="btn-ghost" style="font-size:.78rem;padding:.45rem .75rem">☁️ <span class="hl">Sync from Sheet</span></button>
+      <button class="btn-ghost" onclick="openSlipModal()" style="font-size:.78rem;padding:.45rem .75rem">📷 <span class="hl">Scan Slip</span></button>
+      <button class="btn-primary" onclick="openModal()" style="white-space:nowrap">+ <span class="hl">Add </span>Transaction</button>
     </div>
   </div>
 
   <!-- DASHBOARD -->
   <div id="page-dashboard" class="page active">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem">
+    <div class="rstat">
       <div class="stat-card"><div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;font-weight:500">💸 Spent This Month</div><div style="font-size:1.75rem;font-weight:700" id="stat-spent">฿0</div><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem" id="stat-spent-count">0 expenses</div></div>
       <div class="stat-card"><div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;font-weight:500">💰 Income This Month</div><div style="font-size:1.75rem;font-weight:700;color:#34d399" id="stat-income">฿0</div><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem" id="stat-income-count">0 sources</div></div>
       <div class="stat-card"><div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;font-weight:500">🏦 Total Investments</div><div style="font-size:1.75rem;font-weight:700;color:var(--accent)" id="stat-invest">฿0</div><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem" id="stat-invest-count">0 assets</div></div>
       <div class="stat-card"><div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;font-weight:500">💾 Savings Rate</div><div style="font-size:1.75rem;font-weight:700;color:#fbbf24" id="stat-savings">0%</div><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">net income saved</div></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
-      <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">EXPENSE CATEGORIES</div><div style="position:relative;height:200px"><canvas id="cat-chart"></canvas></div></div>
-      <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">INCOME VS EXPENSE</div><div style="position:relative;height:200px"><canvas id="bar-chart"></canvas></div></div>
+    <div class="r2" style="margin-bottom:1.5rem">
+      <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">EXPENSE CATEGORIES</div><div class="ch" style="position:relative;height:200px"><canvas id="cat-chart"></canvas></div></div>
+      <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">INCOME VS EXPENSE</div><div class="ch" style="position:relative;height:200px"><canvas id="bar-chart"></canvas></div></div>
     </div>
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
@@ -192,8 +228,8 @@ input:focus,select:focus,textarea:focus{
   <!-- INVESTMENTS -->
   <div id="page-investments" class="page">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem" id="invest-cards"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
-      <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">PORTFOLIO TREND</div><div style="position:relative;height:200px"><canvas id="invest-chart"></canvas></div></div>
+    <div class="r2" style="margin-bottom:1rem">
+      <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">PORTFOLIO TREND</div><div class="ch" style="position:relative;height:200px"><canvas id="invest-chart"></canvas></div></div>
       <div class="card">
         <div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">INVESTMENT HISTORY</div>
         <div id="invest-list" style="display:flex;flex-direction:column;gap:.5rem;max-height:220px;overflow-y:auto"></div>
@@ -221,7 +257,7 @@ input:focus,select:focus,textarea:focus{
   <div id="page-analytics" class="page">
     <div style="display:grid;gap:1rem">
       <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">MONTHLY SPENDING TRENDS</div><div style="position:relative;height:220px"><canvas id="trend-chart"></canvas></div></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="r2">
         <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">TOP SPENDING CATEGORIES</div><div id="analytics-cats" style="display:flex;flex-direction:column;gap:.6rem"></div></div>
         <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">MONTHLY SUMMARY</div><div id="analytics-summary" style="display:flex;flex-direction:column;gap:.6rem"></div></div>
       </div>
