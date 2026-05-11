@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FinanceOS</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237c3aed'/%3E%3Ctext x='16' y='22' font-size='18' font-weight='700' font-family='sans-serif' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#7c3aed">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FinanceOS">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{--accent:#a78bfa;--accent2:#7c3aed;--bg:#0f0f13;--surface:#18181f;--surface2:#22222c;--border:#2a2a38;--text:#f1f0ff;--muted:#8b8aa0}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;min-height:100vh;display:flex}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.25rem}
+  .card-sm{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem}
+  .btn-primary{background:var(--accent2);color:#fff;border:none;border-radius:10px;padding:.6rem 1.2rem;font-size:.875rem;font-weight:500;cursor:pointer;transition:all .2s}
+  .btn-primary:hover{background:#6d28d9;transform:translateY(-1px)}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:10px;padding:.6rem 1.2rem;font-size:.875rem;cursor:pointer;transition:all .2s}
+  .btn-ghost:hover{color:var(--text);border-color:var(--accent)}
+  input,select,textarea{background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:.65rem .9rem;font-size:.875rem;width:100%;outline:none;transition:border-color .2s}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  select option{background:#1e1e2e}
+  .nav-item{display:flex;align-items:center;gap:.65rem;padding:.65rem .9rem;border-radius:10px;color:var(--muted);cursor:pointer;font-size:.875rem;font-weight:500;transition:all .15s;white-space:nowrap}
+  .nav-item:hover{color:var(--text);background:var(--surface2)}
+  .nav-item.active{color:var(--accent);background:rgba(167,139,250,.12)}
+  .page{display:none}.page.active{display:block}
+  .progress-bar{height:6px;background:var(--surface2);border-radius:99px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .5s ease}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:1rem}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1.5rem;width:100%;max-width:420px}
+  .chip{display:inline-flex;align-items:center;padding:.3rem .75rem;border-radius:99px;font-size:.75rem;font-weight:500;cursor:pointer;border:1px solid var(--border);color:var(--muted);transition:all .15s}
+  .chip.active,.chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(167,139,250,.1)}
+  #sidebar{width:220px;min-width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.25rem;gap:.25rem;transition:transform .3s}
+  .main-content{flex:1;overflow-y:auto;padding:1.5rem;max-height:100vh}
+  .fab{display:none;position:fixed;bottom:1.5rem;right:1.5rem;z-index:50;width:56px;height:56px;border-radius:50%;background:var(--accent2);color:#fff;font-size:1.5rem;border:none;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(124,58,237,.4)}
+  @media(max-width:768px){#sidebar{position:fixed;left:0;top:0;bottom:0;z-index:60;transform:translateX(-100%)}.main-content{padding:1rem}.fab{display:flex}#menu-btn{display:flex!important}}
+  .tx-row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:.75rem;padding:.85rem 1rem;border-radius:12px;background:var(--surface2);transition:background .15s}
+  .tx-row:hover{background:var(--border)}
+  .tx-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.25rem;position:relative;overflow:hidden}
+  .stat-card::before{content:'';position:absolute;top:-30px;right:-30px;width:80px;height:80px;border-radius:50%;opacity:.06;background:var(--accent)}
+  #overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:55}
+  #overlay.open{display:block}
+</style>
+</head>
+<body>
+
+<div id="overlay" onclick="closeSidebar()"></div>
+
+<nav id="sidebar">
+  <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.75rem;padding:.25rem 0">
+    <div style="width:32px;height:32px;border-radius:10px;background:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:#fff">F</div>
+    <span style="font-size:1rem;font-weight:700;letter-spacing:-.01em">FinanceOS</span>
+  </div>
+  <div class="nav-item active" onclick="navigate('dashboard')">📊 Dashboard</div>
+  <div class="nav-item" onclick="navigate('transactions')">💳 Transactions</div>
+  <div class="nav-item" onclick="navigate('investments')">📈 Investments</div>
+  <div class="nav-item" onclick="navigate('goals')">🎯 Goals</div>
+  <div class="nav-item" onclick="navigate('analytics')">🔍 Analytics</div>
+  <div style="margin-top:auto">
+    <div class="nav-item" onclick="navigate('settings')">⚙️ Settings</div>
+  </div>
+</nav>
+
+<div class="main-content" id="main">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+    <div style="display:flex;align-items:center;gap:.75rem">
+      <button id="menu-btn" onclick="openSidebar()" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:.4rem .6rem;cursor:pointer;font-size:1.1rem">☰</button>
+      <h1 id="page-title" style="font-size:1.25rem;font-weight:700">Dashboard</h1>
+    </div>
+    <div style="display:flex;gap:.6rem;align-items:center">
+      <button id="btn-sync" onclick="syncFromSheet()" class="btn-ghost" style="font-size:.78rem;padding:.45rem .9rem">☁️ Sync from Sheet</button>
+      <button class="btn-ghost" onclick="openSlipModal()" style="font-size:.78rem;padding:.45rem .9rem">📷 Scan Slip</button>
+      <button class="btn-primary" onclick="openModal()">+ Add Transaction</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="page-dashboard" class="page active">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem">
+      <div class="stat-card"><div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;font-weight:500">💸 Spent This Month</div><div style="font-size:1.75rem;font-weight:700" id="stat-spent">฿0</div><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem" id="stat-spent-count">0 expenses</div></div>
+      <div class="stat-card"><div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;font-weight:500">💰 Income This Month</div><div style="font-size:1.75rem;font-weight:700;color:#34d399" id="stat-income">฿0</div><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem" id="stat-income-count">0 sources</div></div>
+      <div class="stat-card"><div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;font-weight:500">🏦 Total Investments</div><div style="font-size:1.75rem;font-weight:700;color:var(--accent)" id="stat-invest">฿0</div><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem" id="stat-invest-count">0 assets</div></div>
+      <div class="stat-card"><div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;font-weight:500">💾 Savings Rate</div><div style="font-size:1.75rem;font-weight:700;color:#fbbf24" id="stat-savings">0%</div><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">net income saved</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+      <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">EXPENSE CATEGORIES</div><div style="position:relative;height:200px"><canvas id="cat-chart"></canvas></div></div>
+      <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">INCOME VS EXPENSE</div><div style="position:relative;height:200px"><canvas id="bar-chart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div style="font-size:.8rem;font-weight:600;color:var(--muted)">RECENT TRANSACTIONS</div>
+        <button class="btn-ghost" onclick="navigate('transactions')" style="font-size:.75rem;padding:.35rem .75rem">View all</button>
+      </div>
+      <div id="recent-tx" style="display:flex;flex-direction:column;gap:.5rem"></div>
+    </div>
+  </div>
+
+  <!-- TRANSACTIONS -->
+  <div id="page-transactions" class="page">
+    <div style="display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap">
+      <input type="text" id="tx-search" placeholder="🔍  Search..." onkeyup="renderTransactions()" style="flex:1;min-width:180px">
+      <select id="tx-filter-type" onchange="renderTransactions()" style="width:auto"><option value="">All types</option><option>Income</option><option>Expense</option></select>
+      <select id="tx-filter-cat" onchange="renderTransactions()" style="width:auto"><option value="">All categories</option></select>
+    </div>
+    <div id="tx-list" style="display:flex;flex-direction:column;gap:.5rem"></div>
+  </div>
+
+  <!-- INVESTMENTS -->
+  <div id="page-investments" class="page">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem" id="invest-cards"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+      <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">PORTFOLIO TREND</div><div style="position:relative;height:200px"><canvas id="invest-chart"></canvas></div></div>
+      <div class="card">
+        <div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">INVESTMENT HISTORY</div>
+        <div id="invest-list" style="display:flex;flex-direction:column;gap:.5rem;max-height:220px;overflow-y:auto"></div>
+      </div>
+    </div>
+    <!-- MARKET ANALYSIS -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <div style="font-size:.8rem;font-weight:600;color:var(--muted)">📊 PORTFOLIO TRACKER</div>
+        <button id="btn-refresh-quotes" onclick="refreshAllQuotes()" class="btn-primary" style="font-size:.75rem;padding:.4rem .9rem">🔄 Refresh Price</button>
+      </div>
+      <div id="portfolio-summary" style="margin-bottom:1rem"></div>
+      <div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:.75rem;padding-top:.75rem;border-top:1px solid var(--border)">📡 MARKET ANALYSIS</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.75rem" id="market-cards"></div>
+    </div>
+  </div>
+
+  <!-- GOALS -->
+  <div id="page-goals" class="page">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:1rem"><button class="btn-primary" onclick="openGoalModal()">+ New Goal</button></div>
+    <div id="goals-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem"></div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div id="page-analytics" class="page">
+    <div style="display:grid;gap:1rem">
+      <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">MONTHLY SPENDING TRENDS</div><div style="position:relative;height:220px"><canvas id="trend-chart"></canvas></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">TOP SPENDING CATEGORIES</div><div id="analytics-cats" style="display:flex;flex-direction:column;gap:.6rem"></div></div>
+        <div class="card"><div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">MONTHLY SUMMARY</div><div id="analytics-summary" style="display:flex;flex-direction:column;gap:.6rem"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="page-settings" class="page">
+    <div class="card" style="max-width:480px">
+      <div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">API CONFIGURATION</div>
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+        <div><label style="font-size:.8rem;color:var(--muted);display:block;margin-bottom:.4rem">Apps Script URL</label><input type="text" id="cfg-url" placeholder="https://script.google.com/macros/s/..."></div>
+        <div><label style="font-size:.8rem;color:var(--muted);display:block;margin-bottom:.4rem">API Key</label><input type="password" id="cfg-key" placeholder="your-api-key"></div>
+        <div><label style="font-size:.8rem;color:var(--muted);display:block;margin-bottom:.4rem">Currency Symbol</label><input type="text" id="cfg-currency" placeholder="฿" value="฿" style="width:80px"></div>
+        <div><label style="font-size:.8rem;color:var(--muted);display:block;margin-bottom:.4rem">Finnhub API Key <span style="color:var(--accent);font-size:.72rem">(สำหรับราคาหุ้น real-time)</span></label><input type="text" id="cfg-finnhub" placeholder="cxxxxxxxxxxxxxxxxxxxxxxx"></div>
+        <div><label style="font-size:.8rem;color:var(--muted);display:block;margin-bottom:.4rem">Gemini API Key <span style="color:var(--accent);font-size:.72rem">(สำหรับอ่านสลิปอัตโนมัติ 📷)</span></label><input type="text" id="cfg-gemini" placeholder="AIzaSy..."></div>
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <button class="btn-primary" onclick="saveSettings()" style="align-self:flex-start">Save Settings</button>
+          <button class="btn-ghost" onclick="testApi()" style="align-self:flex-start">Test API</button>
+        </div>
+      </div>
+      <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+        <div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">DEMO DATA</div>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+          <button class="btn-ghost" onclick="loadDemoData()">Load Demo Data</button>
+          <button class="btn-ghost" onclick="clearAllData()" style="color:#f87171;border-color:rgba(248,113,113,.3)">Clear All Data</button>
+        </div>
+      </div>
+      <div id="api-status" style="margin-top:1rem;display:none"></div>
+      <div style="margin-top:1rem;padding:.75rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.7">
+          💡 <strong style="color:var(--text)">Finnhub</strong> — ฟรี 60 calls/นาที<br>
+          สมัครได้ที่ <a href="https://finnhub.io" style="color:var(--accent)">finnhub.io</a> → Get free API Key<br><br>
+          📷 <strong style="color:var(--text)">Gemini Vision</strong> — ฟรี 15 req/นาที / 1,500/วัน<br>
+          สมัครได้ที่ <a href="https://aistudio.google.com" style="color:var(--accent)">aistudio.google.com</a> → Get API Key
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="fab" onclick="openModal()">+</button>
+
+<!-- SLIP SCAN MODAL -->
+<div class="modal-overlay" id="modal-slip">
+  <div class="modal" style="max-width:480px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <h2 style="font-size:1rem;font-weight:700">📷 Scan Slip</h2>
+      <button onclick="closeSlipModal()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:.25rem .6rem;cursor:pointer">✕</button>
+    </div>
+    <div id="slip-upload-area" onclick="document.getElementById('slip-file').click()"
+         style="border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:1rem"
+         onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div style="font-size:2rem;margin-bottom:.5rem">📎</div>
+      <div style="font-size:.85rem;color:var(--text);font-weight:500">คลิกหรือลากไฟล์มาวางที่นี่</div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:.25rem">รองรับ JPG, PNG, WEBP — ถ่ายจากกล้องได้เลย</div>
+      <input type="file" id="slip-file" accept="image/*" capture="environment" style="display:none" onchange="previewSlip(this)">
+    </div>
+    <div id="slip-preview" style="display:none;margin-bottom:1rem">
+      <img id="slip-img" style="width:100%;border-radius:12px;max-height:260px;object-fit:contain;background:var(--surface2)">
+    </div>
+    <div id="slip-scanning" style="display:none;text-align:center;padding:1.25rem;color:var(--muted);font-size:.85rem">
+      <div style="font-size:1.75rem;margin-bottom:.5rem">🤖</div>
+      AI กำลังวิเคราะห์สลิป...
+    </div>
+    <div id="slip-result" style="display:none;margin-bottom:1rem;background:var(--surface2);border-radius:12px;padding:.9rem"></div>
+    <div style="display:flex;gap:.75rem">
+      <button class="btn-ghost" onclick="closeSlipModal()" style="flex:1">Cancel</button>
+      <button id="btn-scan-slip" class="btn-primary" onclick="scanSlip()" style="flex:1" disabled>🔍 วิเคราะห์</button>
+      <button id="btn-fill-slip" class="btn-primary" onclick="fillFromSlip()" style="flex:1;display:none">✓ ใช้ข้อมูลนี้</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRANSACTION MODAL -->
+<div class="modal-overlay" id="modal-tx">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <h2 style="font-size:1rem;font-weight:700">Add Transaction</h2>
+      <button onclick="closeModal()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:.25rem .6rem;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;gap:.5rem;margin-bottom:1.25rem">
+      <button class="chip active" id="type-income" onclick="setType('Income')">💰 Income</button>
+      <button class="chip" id="type-expense" onclick="setType('Expense')">💸 Expense</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.75rem">
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Amount</label><input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01"></div>
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Category</label>
+        <select id="tx-cat">
+          <option value="Salary">💼 Salary</option><option value="Freelance">💻 Freelance</option>
+          <option value="Food">🍜 Food</option><option value="Transport">🚗 Transport</option>
+          <option value="Shopping">🛍️ Shopping</option><option value="Bills">⚡ Bills</option>
+          <option value="Education">📚 Education</option><option value="Entertainment">🎮 Entertainment</option>
+          <option value="Investment">📈 Investment</option><option value="Other">📦 Other</option>
+        </select>
+      </div>
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Date</label><input type="date" id="tx-date"></div>
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Note (optional)</label><input type="text" id="tx-note" placeholder="What was this for?"></div>
+      <div style="display:flex;gap:.75rem;margin-top:.5rem">
+        <button class="btn-ghost" onclick="closeModal()" style="flex:1">Cancel</button>
+        <button class="btn-primary" id="btn-add-tx" onclick="addTransaction()" style="flex:1">Add Transaction</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT INVESTMENT MODAL -->
+<div class="modal-overlay" id="modal-edit-invest">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <h2 style="font-size:1rem;font-weight:700">Edit Investment</h2>
+      <button onclick="closeEditInvestModal()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:.25rem .6rem;cursor:pointer">✕</button>
+    </div>
+    <input type="hidden" id="edit-inv-id">
+    <div style="display:flex;flex-direction:column;gap:.75rem">
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Asset</label>
+        <select id="edit-inv-asset">
+          <option value="Bitcoin">₿ Bitcoin</option><option value="ETF">📊 ETF</option>
+          <option value="Gold">🥇 Gold</option><option value="Stock">📈 Stock</option>
+          <option value="Savings">🏦 Savings</option>
+        </select>
+      </div>
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Amount</label><input type="number" id="edit-inv-amount" min="0"></div>
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Date</label><input type="date" id="edit-inv-date"></div>
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Note</label><input type="text" id="edit-inv-note"></div>
+      <div style="display:flex;gap:.75rem;margin-top:.5rem">
+        <button class="btn-ghost" onclick="deleteInvestment(document.getElementById('edit-inv-id').value)" style="flex:1;color:#f87171;border-color:rgba(248,113,113,.3)">Delete</button>
+        <button class="btn-primary" id="btn-save-inv" onclick="saveEditInvestment()" style="flex:1">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD INVESTMENT MODAL -->
+<div class="modal-overlay" id="modal-invest">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <h2 style="font-size:1rem;font-weight:700">Add Investment</h2>
+      <button onclick="closeInvestModal()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:.25rem .6rem;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.75rem">
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Asset</label>
+        <select id="inv-asset">
+          <option value="Bitcoin">₿ Bitcoin</option><option value="ETF">📊 ETF</option>
+          <option value="Gold">🥇 Gold</option><option value="Stock">📈 Stock</option>
+          <option value="Savings">🏦 Savings</option>
+        </select>
+      </div>
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Amount</label><input type="number" id="inv-amount" placeholder="0.00" min="0"></div>
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Date</label><input type="date" id="inv-date"></div>
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Note</label><input type="text" id="inv-note" placeholder="e.g. Monthly DCA"></div>
+      <div style="display:flex;gap:.75rem;margin-top:.5rem">
+        <button class="btn-ghost" onclick="closeInvestModal()" style="flex:1">Cancel</button>
+        <button class="btn-primary" id="btn-add-inv" onclick="addInvestment()" style="flex:1">Add Investment</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GOAL MODAL -->
+<div class="modal-overlay" id="modal-goal">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <h2 style="font-size:1rem;font-weight:700">New Goal</h2>
+      <button onclick="closeGoalModal()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:.25rem .6rem;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.75rem">
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Goal Name</label><input type="text" id="goal-name" placeholder="e.g. Emergency Fund"></div>
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Target Amount</label><input type="number" id="goal-target" placeholder="50000" min="1"></div>
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Current Saved</label><input type="number" id="goal-current" placeholder="0" min="0" value="0"></div>
+      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Deadline</label><input type="date" id="goal-deadline"></div>
+      <div style="display:flex;gap:.75rem;margin-top:.5rem">
+        <button class="btn-ghost" onclick="closeGoalModal()" style="flex:1">Cancel</button>
+        <button class="btn-primary" id="btn-add-goal" onclick="addGoal()" style="flex:1">Create Goal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" style="display:none;position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.7rem 1.25rem;border-radius:12px;font-size:.85rem;font-weight:500;z-index:200"></div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const CONFIG = {
+  get apiUrl(){ return localStorage.getItem('cfg_url') || '' },
+  get apiKey(){ return localStorage.getItem('cfg_key') || '' },
+  get currency(){ return localStorage.getItem('cfg_currency') || '฿' },
+  get finnhubKey(){ return localStorage.getItem('cfg_finnhub') || '' },
+  get geminiKey(){ return localStorage.getItem('cfg_gemini') || '' },
+  get useLocal(){ return !localStorage.getItem('cfg_url') }
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  transactions: JSON.parse(localStorage.getItem('transactions') || '[]'),
+  investments:  JSON.parse(localStorage.getItem('investments')  || '[]'),
+  goals:        JSON.parse(localStorage.getItem('goals')        || '[]'),
+};
+let txType = 'Income';
+let editingTxId = null;
+let slipData = null;
+let charts = {};
+
+// ============================================================
+// HELPERS
+// ============================================================
+const fmt = n => CONFIG.currency + Number(n).toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0});
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const thisMonth = () => new Date().toISOString().slice(0,7);
+const save = () => {
+  localStorage.setItem('transactions', JSON.stringify(state.transactions));
+  localStorage.setItem('investments',  JSON.stringify(state.investments));
+  localStorage.setItem('goals',        JSON.stringify(state.goals));
+};
+const toast = (msg, ok=true) => {
+  const t = document.getElementById('toast');
+  t.textContent = (ok ? '✓ ' : '⚠ ') + msg;
+  t.style.display = 'block';
+  t.style.borderColor = ok ? 'rgba(52,211,153,.3)' : 'rgba(248,113,113,.3)';
+  t.style.color = ok ? '#34d399' : '#f87171';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.display = 'none', 2800);
+};
+const setLoading = (btnId, loading) => {
+  const b = document.getElementById(btnId);
+  if (!b) return;
+  b.disabled = loading;
+  b.style.opacity = loading ? '.6' : '1';
+  b.textContent = loading ? 'Saving...' : b.dataset.label || b.textContent;
+};
+
+const catEmoji = {
+  Food:'🍜', Transport:'🚗', Shopping:'🛍️', Bills:'⚡', Education:'📚',
+  Entertainment:'🎮', Investment:'📈', Salary:'💼', Freelance:'💻', Other:'📦',
+  Bitcoin:'₿', ETF:'📊', Gold:'🥇', Stock:'📈', Savings:'🏦'
+};
+
+// ============================================================
+// API — แก้ CORS ด้วย redirect:follow + Content-Type:text/plain
+// ============================================================
+async function apiFetch(params) {
+  const url = new URL(CONFIG.apiUrl);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, String(v)));
+  url.searchParams.set('key', CONFIG.apiKey);
+  const res = await fetch(url.toString(), { method: 'GET', redirect: 'follow' });
+  return res.json();
+}
+
+async function apiPost(body) {
+  const url = new URL(CONFIG.apiUrl);
+  url.searchParams.set('key', CONFIG.apiKey);
+  const res = await fetch(url.toString(), {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain' }, // ← ป้องกัน CORS preflight
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+async function testApi() {
+  const statusEl = document.getElementById('api-status');
+  statusEl.style.display = 'block';
+  statusEl.style.color = 'var(--muted)';
+  statusEl.textContent = '⏳ Testing connection...';
+  if (!CONFIG.apiUrl) { statusEl.style.color = '#f87171'; statusEl.textContent = '⚠ No API URL set'; return; }
+  try {
+    const r = await apiFetch({ action: 'getTransactions' });
+    if (r.success) { statusEl.style.color = '#34d399'; statusEl.textContent = '✓ Connected! Found ' + r.data.length + ' transactions'; }
+    else { statusEl.style.color = '#f87171'; statusEl.textContent = '✗ Error: ' + r.error; }
+  } catch(e) {
+    statusEl.style.color = '#f87171';
+    statusEl.textContent = '✗ Connection failed: ' + e.message;
+  }
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(page)) n.classList.add('active');
+  });
+  const titles = { dashboard:'Dashboard', transactions:'Transactions', investments:'Investments', goals:'Goals', analytics:'Analytics', settings:'Settings' };
+  document.getElementById('page-title').textContent = titles[page] || page;
+  closeSidebar();
+  if (page === 'dashboard')    renderDashboard();
+  if (page === 'transactions') renderTransactions();
+  if (page === 'investments')  renderInvestments();
+  if (page === 'goals')        renderGoals();
+  if (page === 'analytics')    renderAnalytics();
+  if (page === 'settings')     loadSettingsForm();
+}
+
+function openSidebar()  { document.getElementById('sidebar').style.transform = 'translateX(0)'; document.getElementById('overlay').classList.add('open'); }
+function closeSidebar() { document.getElementById('sidebar').style.transform = ''; document.getElementById('overlay').classList.remove('open'); }
+
+// ============================================================
+// MODALS
+// ============================================================
+function openModal() {
+  editingTxId = null;
+  setType('Income');
+  document.getElementById('tx-amount').value = '';
+  document.getElementById('tx-note').value = '';
+  document.getElementById('tx-date').value = new Date().toISOString().slice(0,10);
+  document.querySelector('#modal-tx h2').textContent = 'Add Transaction';
+  document.getElementById('btn-add-tx').textContent = 'Add Transaction';
+  document.getElementById('btn-add-tx').dataset.label = 'Add Transaction';
+  document.getElementById('modal-tx').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-tx').classList.remove('open');
+  editingTxId = null;
+  document.querySelector('#modal-tx h2').textContent = 'Add Transaction';
+  document.getElementById('btn-add-tx').textContent = 'Add Transaction';
+  document.getElementById('btn-add-tx').dataset.label = 'Add Transaction';
+}
+function openInvestModal() { document.getElementById('inv-date').value = new Date().toISOString().slice(0,10); document.getElementById('modal-invest').classList.add('open'); }
+function closeInvestModal(){ document.getElementById('modal-invest').classList.remove('open'); }
+function openGoalModal()   { document.getElementById('modal-goal').classList.add('open'); }
+function closeGoalModal()  { document.getElementById('modal-goal').classList.remove('open'); }
+
+function setType(t) {
+  txType = t;
+  document.getElementById('type-income').classList.toggle('active', t === 'Income');
+  document.getElementById('type-expense').classList.toggle('active', t === 'Expense');
+}
+
+// ============================================================
+// TRANSACTIONS — เพิ่ม apiPost + loading state
+// ============================================================
+async function addTransaction() {
+  const amt  = parseFloat(document.getElementById('tx-amount').value);
+  const cat  = document.getElementById('tx-cat').value;
+  const date = document.getElementById('tx-date').value;
+  const note = document.getElementById('tx-note').value.trim().replace(/[=+\-@]/g,'');
+  if (!amt || amt <= 0) { toast('Please enter a valid amount', false); return; }
+  if (!date)            { toast('Please select a date', false); return; }
+
+  if (editingTxId) {
+    const tx = state.transactions.find(t => t.id === editingTxId);
+    if (!tx) return;
+    tx.type = txType; tx.category = cat; tx.amount = amt; tx.date = date; tx.note = note;
+    if (CONFIG.apiUrl) {
+      setLoading('btn-add-tx', true);
+      try {
+        const r = await apiPost({ action:'updateTransaction', ...tx });
+        if (!r.success) toast('Sync error: ' + r.error, false); else toast('Transaction updated & synced ✓');
+      } catch(e) { toast('Saved locally — sync failed', false); }
+      setLoading('btn-add-tx', false);
+    } else { toast('Transaction updated'); }
+    save(); closeModal(); renderTransactions(); renderDashboard();
+    return;
+  }
+
+  const tx = { id:uid(), created_at:new Date().toISOString(), date, type:txType, category:cat, amount:amt, note };
+
+  if (CONFIG.apiUrl) {
+    setLoading('btn-add-tx', true);
+    try {
+      const r = await apiPost({ action:'addTransaction', ...tx });
+      if (!r.success) { toast('API error: ' + r.error, false); setLoading('btn-add-tx', false); return; }
+      toast('Transaction saved to Sheet! ✓');
+    } catch(e) {
+      toast('API failed — saved locally only', false);
+    }
+    setLoading('btn-add-tx', false);
+  }
+
+  state.transactions.unshift(tx);
+  save();
+  closeModal();
+  if (!CONFIG.apiUrl) toast('Transaction added (local)');
+  renderDashboard();
+}
+
+async function deleteTransaction(id) {
+  if (CONFIG.apiUrl) {
+    try { await apiPost({ action:'deleteTransaction', id }); } catch(e) {}
+  }
+  state.transactions = state.transactions.filter(t => t.id !== id);
+  save();
+  renderTransactions();
+  renderDashboard();
+  toast('Deleted');
+}
+
+function openEditTransaction(id) {
+  const tx = state.transactions.find(t => t.id === id);
+  if (!tx) return;
+  editingTxId = id;
+  setType(tx.type);
+  document.getElementById('tx-amount').value = tx.amount;
+  document.getElementById('tx-cat').value = tx.category;
+  document.getElementById('tx-date').value = tx.date;
+  document.getElementById('tx-note').value = tx.note || '';
+  document.querySelector('#modal-tx h2').textContent = 'Edit Transaction';
+  document.getElementById('btn-add-tx').textContent = 'Save Changes';
+  document.getElementById('btn-add-tx').dataset.label = 'Save Changes';
+  document.getElementById('modal-tx').classList.add('open');
+}
+
+// ============================================================
+// SLIP SCANNER — Gemini Vision
+// ============================================================
+function openSlipModal() {
+  slipData = null;
+  document.getElementById('slip-file').value = '';
+  document.getElementById('slip-preview').style.display = 'none';
+  document.getElementById('slip-result').style.display = 'none';
+  document.getElementById('slip-scanning').style.display = 'none';
+  document.getElementById('btn-scan-slip').disabled = true;
+  document.getElementById('btn-scan-slip').style.display = '';
+  document.getElementById('btn-fill-slip').style.display = 'none';
+  document.getElementById('modal-slip').classList.add('open');
+}
+
+function closeSlipModal() { document.getElementById('modal-slip').classList.remove('open'); }
+
+function previewSlip(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('slip-img').src = e.target.result;
+    document.getElementById('slip-preview').style.display = 'block';
+    document.getElementById('btn-scan-slip').disabled = false;
+    document.getElementById('slip-result').style.display = 'none';
+    document.getElementById('btn-fill-slip').style.display = 'none';
+    document.getElementById('btn-scan-slip').style.display = '';
+    slipData = null;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function scanSlip() {
+  const key = CONFIG.geminiKey;
+  if (!key) { toast('ใส่ Gemini API Key ใน Settings ก่อน', false); return; }
+  const file = document.getElementById('slip-file').files[0];
+  if (!file) { toast('เลือกไฟล์ก่อน', false); return; }
+
+  document.getElementById('slip-scanning').style.display = 'block';
+  document.getElementById('btn-scan-slip').disabled = true;
+  document.getElementById('slip-result').style.display = 'none';
+
+  try {
+    const base64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+
+    const prompt = `คุณเป็น AI อ่านสลิปโอนเงิน ใบเสร็จ หรือรูปธุรกรรมการเงินภาษาไทย
+วิเคราะห์รูปแล้วดึงข้อมูล ตอบเป็น JSON เท่านั้น ห้ามมีข้อความอื่น:
+{
+  "amount": <จำนวนเงินเป็นตัวเลขล้วน ไม่มีเครื่องหมาย>,
+  "type": "<Income หรือ Expense — ได้รับเงิน=Income จ่ายเงิน=Expense>",
+  "category": "<เลือกจาก: Salary, Freelance, Food, Transport, Shopping, Bills, Education, Entertainment, Investment, Other>",
+  "date": "<YYYY-MM-DD หรือ null ถ้าไม่มี>",
+  "note": "<ชื่อผู้โอน ร้านค้า หรือรายละเอียดสั้นๆ ไม่เกิน 40 ตัวอักษร>"
+}`;
+
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: file.type, data: base64 } }] }]
+      })
+    });
+
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const match = text.match(/\{[\s\S]*?\}/);
+    if (!match) throw new Error('ไม่พบข้อมูลในสลิป กรุณาถ่ายภาพให้ชัดขึ้น');
+    slipData = JSON.parse(match[0]);
+
+    const isInc = slipData.type === 'Income';
+    const resEl = document.getElementById('slip-result');
+    resEl.innerHTML = `
+      <div style="font-size:.72rem;font-weight:600;color:var(--muted);margin-bottom:.6rem">✅ ข้อมูลที่อ่านได้</div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:.35rem .85rem;font-size:.83rem;align-items:center">
+        <span style="color:var(--muted)">ประเภท</span><span style="color:${isInc?'#34d399':'#f87171'};font-weight:600">${slipData.type}</span>
+        <span style="color:var(--muted)">จำนวน</span><span style="font-weight:700;font-size:.95rem">${CONFIG.currency}${Number(slipData.amount||0).toLocaleString()}</span>
+        <span style="color:var(--muted)">หมวด</span><span>${catEmoji[slipData.category]||'📦'} ${slipData.category||'Other'}</span>
+        <span style="color:var(--muted)">วันที่</span><span>${slipData.date||'ไม่ระบุ'}</span>
+        <span style="color:var(--muted)">หมายเหตุ</span><span style="color:var(--text)">${slipData.note||'-'}</span>
+      </div>`;
+    resEl.style.display = 'block';
+    document.getElementById('btn-fill-slip').style.display = '';
+    document.getElementById('btn-scan-slip').style.display = 'none';
+
+  } catch(e) {
+    toast('วิเคราะห์ไม่สำเร็จ: ' + e.message, false);
+    document.getElementById('btn-scan-slip').disabled = false;
+  } finally {
+    document.getElementById('slip-scanning').style.display = 'none';
+  }
+}
+
+function fillFromSlip() {
+  if (!slipData) return;
+  closeSlipModal();
+  setType(slipData.type === 'Income' ? 'Income' : 'Expense');
+  if (slipData.amount) document.getElementById('tx-amount').value = slipData.amount;
+  const catOpt = document.querySelector(`#tx-cat option[value="${slipData.category}"]`);
+  if (catOpt) document.getElementById('tx-cat').value = slipData.category;
+  document.getElementById('tx-date').value = slipData.date || new Date().toISOString().slice(0,10);
+  if (slipData.note) document.getElementById('tx-note').value = slipData.note;
+  editingTxId = null;
+  document.querySelector('#modal-tx h2').textContent = 'Add Transaction';
+  document.getElementById('btn-add-tx').textContent = 'Add Transaction';
+  document.getElementById('btn-add-tx').dataset.label = 'Add Transaction';
+  document.getElementById('modal-tx').classList.add('open');
+  toast('เติมข้อมูลจากสลิปแล้ว — ตรวจสอบก่อนกด Add ✓');
+}
+
+function renderTransactions() {
+  const search = (document.getElementById('tx-search')?.value || '').toLowerCase();
+  const ftype  = document.getElementById('tx-filter-type')?.value || '';
+  const fcat   = document.getElementById('tx-filter-cat')?.value || '';
+
+  const cats = [...new Set(state.transactions.map(t => t.category))];
+  const cfEl = document.getElementById('tx-filter-cat');
+  if (cfEl) {
+    const cur = cfEl.value;
+    cfEl.innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option ${c===cur?'selected':''}>${c}</option>`).join('');
+  }
+
+  let txs = state.transactions.filter(t => {
+    if (ftype && t.type !== ftype) return false;
+    if (fcat  && t.category !== fcat) return false;
+    if (search && !t.category.toLowerCase().includes(search) && !(t.note||'').toLowerCase().includes(search) && !String(t.amount).includes(search)) return false;
+    return true;
+  });
+
+  const el = document.getElementById('tx-list');
+  if (!txs.length) { el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">No transactions found</div>'; return; }
+  el.innerHTML = txs.map(t => txRow(t, true)).join('');
+}
+
+function txRow(t, showDelete=false) {
+  const isInc = t.type === 'Income';
+  return `<div class="tx-row">
+    <div class="tx-icon" style="background:${isInc?'rgba(52,211,153,.1)':'rgba(248,113,113,.1)'}">${catEmoji[t.category]||'📦'}</div>
+    <div>
+      <div style="font-size:.85rem;font-weight:500">${t.category}</div>
+      <div style="font-size:.72rem;color:var(--muted)">${t.note||t.date}</div>
+    </div>
+    <div>
+      <div style="font-size:.9rem;font-weight:600;color:${isInc?'#34d399':'#f87171'}">${isInc?'+':'-'}${fmt(t.amount)}</div>
+      <div style="font-size:.7rem;color:var(--muted);text-align:right">${t.date}</div>
+    </div>
+    ${showDelete ? `<div style="display:flex;gap:.3rem">
+      <button onclick="openEditTransaction('${t.id}')" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);color:var(--accent);border-radius:8px;padding:.3rem .5rem;cursor:pointer;font-size:.8rem">✏️</button>
+      <button onclick="deleteTransaction('${t.id}')" style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:#f87171;border-radius:8px;padding:.3rem .5rem;cursor:pointer;font-size:.8rem">✕</button>
+    </div>` : ''}
+  </div>`;
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const now = thisMonth();
+  const mTx = state.transactions.filter(t => t.date.startsWith(now));
+  const income  = mTx.filter(t => t.type==='Income').reduce((s,t)  => s+t.amount, 0);
+  const expense = mTx.filter(t => t.type==='Expense').reduce((s,t) => s+t.amount, 0);
+  const totalInvest = state.investments.reduce((s,i) => s+Number(i.amount), 0);
+  const savings = income > 0 ? Math.round((income-expense)/income*100) : 0;
+
+  document.getElementById('stat-spent').textContent       = fmt(expense);
+  document.getElementById('stat-spent-count').textContent = mTx.filter(t=>t.type==='Expense').length + ' expenses';
+  document.getElementById('stat-income').textContent      = fmt(income);
+  document.getElementById('stat-income-count').textContent= mTx.filter(t=>t.type==='Income').length + ' sources';
+  document.getElementById('stat-invest').textContent      = fmt(totalInvest);
+  document.getElementById('stat-invest-count').textContent= state.investments.length + ' records';
+  document.getElementById('stat-savings').textContent     = savings + '%';
+
+  document.getElementById('recent-tx').innerHTML = state.transactions.slice(0,6).map(t => txRow(t,false)).join('')
+    || '<div style="text-align:center;padding:2rem;color:var(--muted)">No transactions yet. Add one above!</div>';
+
+  // Donut
+  const cats = {};
+  mTx.filter(t=>t.type==='Expense').forEach(t => { cats[t.category]=(cats[t.category]||0)+t.amount; });
+  const keys = Object.keys(cats);
+  const colors = ['#a78bfa','#7c3aed','#f87171','#fbbf24','#34d399','#60a5fa','#fb923c','#a3e635','#f472b6'];
+  if (charts.cat) charts.cat.destroy();
+  const catCtx = document.getElementById('cat-chart')?.getContext('2d');
+  if (catCtx) {
+    charts.cat = new Chart(catCtx, {
+      type:'doughnut',
+      data:{ labels: keys.length?keys:['No data'], datasets:[{ data:keys.length?keys.map(k=>cats[k]):[1], backgroundColor:keys.length?colors.slice(0,keys.length):['#2a2a38'], borderWidth:0, hoverOffset:4 }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:'#8b8aa0', font:{size:10}, boxWidth:10 } } } }
+    });
+  }
+
+  // Bar
+  if (charts.bar) charts.bar.destroy();
+  const barCtx = document.getElementById('bar-chart')?.getContext('2d');
+  if (barCtx) {
+    const months=[],inc=[],exp=[];
+    for (let i=5;i>=0;i--) {
+      const d=new Date(); d.setMonth(d.getMonth()-i);
+      const m=d.toISOString().slice(0,7);
+      months.push(d.toLocaleString('default',{month:'short'}));
+      const mData=state.transactions.filter(t=>t.date.startsWith(m));
+      inc.push(mData.filter(t=>t.type==='Income').reduce((s,t)=>s+t.amount,0));
+      exp.push(mData.filter(t=>t.type==='Expense').reduce((s,t)=>s+t.amount,0));
+    }
+    charts.bar = new Chart(barCtx, {
+      type:'bar',
+      data:{ labels:months, datasets:[
+        { label:'Income',  data:inc, backgroundColor:'rgba(52,211,153,.7)', borderRadius:4 },
+        { label:'Expense', data:exp, backgroundColor:'rgba(248,113,113,.7)', borderRadius:4 }
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:'#8b8aa0', font:{size:10} } } }, scales:{ x:{ grid:{display:false}, ticks:{color:'#8b8aa0',font:{size:10}} }, y:{ grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#8b8aa0',font:{size:10},callback:v=>CONFIG.currency+v.toLocaleString()} } } }
+    });
+  }
+}
+
+// ============================================================
+// SYNC FROM GOOGLE SHEETS
+// ============================================================
+let isSyncing = false;
+
+async function syncFromSheet() {
+  if (!CONFIG.apiUrl) { toast('ใส่ Apps Script URL ใน Settings ก่อน', false); return; }
+  if (isSyncing) return;
+  isSyncing = true;
+
+  const btn = document.getElementById('btn-sync');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing...'; }
+
+  try {
+    const [txRes, invRes, goalRes] = await Promise.all([
+      apiFetch({ action: 'getTransactions' }),
+      apiFetch({ action: 'getInvestments' }),
+      apiFetch({ action: 'getGoals' }),
+    ]);
+
+    let updated = false;
+
+    if (txRes.success && Array.isArray(txRes.data)) {
+      // merge: Sheet เป็น source of truth, ไม่ overwrite local ที่ยังไม่ได้ sync
+      const sheetIds = new Set(txRes.data.map(t => t.id));
+      const localOnly = state.transactions.filter(t => !sheetIds.has(t.id));
+      state.transactions = [
+        ...txRes.data.map(t => ({
+          ...t,
+          amount: Number(t.amount)
+        })),
+        ...localOnly
+      ].sort((a,b) => b.created_at?.localeCompare(a.created_at));
+      updated = true;
+    }
+
+    if (invRes.success && Array.isArray(invRes.data)) {
+      const sheetIds = new Set(invRes.data.map(i => i.id));
+      const localOnly = state.investments.filter(i => !sheetIds.has(i.id));
+      state.investments = [
+        ...invRes.data.map(i => ({ ...i, amount: Number(i.amount) })),
+        ...localOnly
+      ].sort((a,b) => b.created_at?.localeCompare(a.created_at));
+      updated = true;
+    }
+
+    if (goalRes.success && Array.isArray(goalRes.data)) {
+      const sheetIds = new Set(goalRes.data.map(g => g.id));
+      const localOnly = state.goals.filter(g => !sheetIds.has(g.id));
+      state.goals = [
+        ...goalRes.data.map(g => ({
+          ...g,
+          target_amount:  Number(g.target_amount),
+          current_amount: Number(g.current_amount)
+        })),
+        ...localOnly
+      ];
+      updated = true;
+    }
+
+    if (updated) {
+      save();
+      renderDashboard();
+      toast(`✓ Synced — ${state.transactions.length} transactions, ${state.investments.length} investments, ${state.goals.length} goals`);
+    }
+
+  } catch(e) {
+    toast('Sync failed: ' + e.message, false);
+  } finally {
+    isSyncing = false;
+    if (btn) { btn.disabled = false; btn.textContent = '☁️ Sync from Sheet'; }
+  }
+}
+
+// sync อัตโนมัติตอน load ถ้ามี API URL
+async function autoSyncOnLoad() {
+  if (!CONFIG.apiUrl) return;
+  const btn = document.getElementById('btn-sync');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Auto syncing...'; }
+  isSyncing = false; // reset ก่อน
+  await syncFromSheet();
+}
+
+
+const PORTFOLIO_TICKERS = [
+  { ticker:'NVDA',  name:'NVIDIA',    shares:null, currency:'USD', flag:'🇺🇸' },
+  { ticker:'TSM',   name:'TSMC ADR',  shares:null, currency:'USD', flag:'🇹🇼' },
+  { ticker:'SPTE',  name:'SP Funds Tech ETF (Halal)', shares:null, currency:'USD', flag:'🌙' },
+];
+
+let liveQuotes = {};        // { NVDA: { c, d, dp, h, l, o, pc }, ... }
+let usdThbRate = 35.5;      // fallback rate, updated from API
+let quoteRefreshTimer = null;
+
+async function fetchUSDTHB() {
+  try {
+    const r = await fetch(`https://finnhub.io/api/v1/forex/rates?base=USD&token=${CONFIG.finnhubKey}`);
+    const d = await r.json();
+    if (d.quote && d.quote.THB) usdThbRate = d.quote.THB;
+  } catch(e) {}
+}
+
+async function fetchQuote(ticker) {
+  const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${CONFIG.finnhubKey}`);
+  const d = await r.json();
+  return d;
+}
+
+async function fetchCandles(ticker) {
+  const now   = Math.floor(Date.now()/1000);
+  const from  = now - 60*60*24*30; // 30 วัน
+  const r = await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${ticker}&resolution=D&from=${from}&to=${now}&token=${CONFIG.finnhubKey}`);
+  return r.json();
+}
+
+async function refreshAllQuotes() {
+  if (!CONFIG.finnhubKey) return;
+  await fetchUSDTHB();
+  for (const p of PORTFOLIO_TICKERS) {
+    try {
+      const q = await fetchQuote(p.ticker);
+      if (q && q.c) liveQuotes[p.ticker] = q;
+    } catch(e) {}
+    await new Promise(res => setTimeout(res, 300)); // throttle
+  }
+  renderMarketCards();
+  renderPortfolioSummary();
+}
+
+function startAutoRefresh() {
+  refreshAllQuotes();
+  clearInterval(quoteRefreshTimer);
+  quoteRefreshTimer = setInterval(refreshAllQuotes, 60000); // ทุก 1 นาที
+}
+
+// ============================================================
+// PORTFOLIO SUMMARY — คำนวณกำไร/ขาดทุนจาก holdings
+// ============================================================
+function getHoldings() {
+  // รวม investment ที่ตรงกับ ticker แต่ละตัว (จาก note หรือ asset)
+  const map = { NVDA:'Stock', TSM:'Stock', SPTE:'ETF', Bitcoin:'Bitcoin', Gold:'Gold', Savings:'Savings' };
+  const result = {};
+  PORTFOLIO_TICKERS.forEach(p => {
+    const invs = state.investments.filter(i =>
+      i.note?.toUpperCase().includes(p.ticker) || i.asset?.toUpperCase() === p.ticker.toUpperCase()
+    );
+    const totalInvested = invs.reduce((s,i) => s+Number(i.amount), 0);
+    result[p.ticker] = { invested: totalInvested, entries: invs.length };
+  });
+  return result;
+}
+
+// ============================================================
+// MARKET DATA
+// ============================================================
+const MARKET_DATA = [
+  {
+    ticker:'NVDA', name:'NVIDIA Corporation', type:'หุ้นสหรัฐ', flag:'🇺🇸',
+    pe_static:40.73, rating:'Strong Buy', ratingColor:'#34d399',
+    earningsDate:'20 พ.ค. 2026',
+    highlights:[
+      'Goldman Sachs คาด "major re-rating" ก่อน earnings 20 พ.ค.',
+      'ลงทุน $2.1B ใน IREN Data Center — สัญญา $3.4B',
+      'SoftBank เจรจาสร้าง AI servers ในญี่ปุ่น',
+      'ความเสี่ยง: ชิปถูกสงสัยลักลอบขายผ่านไทยไป Alibaba',
+    ],
+    risk:'สูง', riskColor:'#f87171',
+    summary:'King of AI chips — earnings สำคัญมาก 20 พ.ค. 2026',
+  },
+  {
+    ticker:'TSM', name:'Taiwan Semiconductor (TSMC)', type:'หุ้นไต้หวัน (ADR)', flag:'🇹🇼',
+    pe_static:33.95, rating:'Strong Buy', ratingColor:'#34d399',
+    earningsDate:'16 ก.ค. 2026',
+    highlights:[
+      'รายได้ Q1 2026 โต 35% YoY — แข็งแกร่งมาก',
+      'รายได้เดือน เม.ย. NT$410B โต 17.5% YoY',
+      'กำไร Q1 โต ~60% YoY สู่ $20B+',
+      'JV กับ Sony พัฒนา next-gen image sensors ในญี่ปุ่น',
+    ],
+    risk:'ปานกลาง', riskColor:'#fbbf24',
+    summary:'ผู้ผลิตชิปเบอร์ 1 โลก — YTD +31% แข็งกว่า NVDA ปีนี้',
+  },
+  {
+    ticker:'SPTE', name:'SP Funds S&P Global Tech ETF', type:'ETF ฮาลาล (Shariah)', flag:'🌙',
+    pe_static:null, rating:'Halal ✓', ratingColor:'#a78bfa',
+    earningsDate:'ไม่มี (ETF)',
+    highlights:[
+      'ผ่าน Shariah screening — ไม่มีดอกเบี้ย ไม่มีหุ้นต้องห้าม',
+      '~47% international stocks (global tech)',
+      'ครอบคลุม AI, cloud, e-commerce, healthtech ทั่วโลก',
+      'Expense ratio 0.55% — แข่งขันได้กับ ESG ETF ทั่วไป',
+    ],
+    risk:'ปานกลาง', riskColor:'#fbbf24',
+    summary:'ทางเลือกฮาลาลเทคโนโลยีระดับโลก — เหมาะลงทุนระยะยาว DCA',
+  },
+];
+
+function renderPortfolioSummary() {
+  const el = document.getElementById('portfolio-summary');
+  if (!el) return;
+  const holdings = getHoldings();
+  let totalInvestedTHB = 0, totalValueTHB = 0, hasAny = false;
+
+  const rows = PORTFOLIO_TICKERS.map(p => {
+    const q = liveQuotes[p.ticker];
+    const h = holdings[p.ticker];
+    if (!q || !q.c || !h.invested) return null;
+    hasAny = true;
+    // คำนวณจำนวนหุ้นโดย assume ซื้อ avg ราคาปัจจุบัน (ถ้าไม่ได้ระบุจำนวนหุ้น)
+    const priceTHB     = q.c * usdThbRate;
+    const prevTHB      = q.pc * usdThbRate;
+    const changeAmt    = (q.c - q.pc);
+    const changePct    = q.dp;
+    // ใช้จำนวนเงินที่ลงทุนเป็น THB หาร ราคา THB = จำนวนหุ้น (approximate)
+    const shares       = h.invested / priceTHB;
+    const currentVal   = shares * priceTHB;
+    const prevVal      = shares * prevTHB;
+    const pnlToday     = currentVal - prevVal;
+    totalInvestedTHB  += h.invested;
+    totalValueTHB     += currentVal;
+    return { p, q, h, priceTHB, changePct, changeAmt, shares, currentVal, pnlToday };
+  }).filter(Boolean);
+
+  if (!hasAny) {
+    el.innerHTML = `<div style="color:var(--muted);font-size:.8rem;padding:.75rem;text-align:center">
+      ${CONFIG.finnhubKey ? 'ไม่พบ investment ที่ตรงกับ NVDA / TSM / SPTE<br><span style="font-size:.72rem">ใส่ชื่อ ticker ใน note ของ investment เช่น "NVDA 10 shares"</span>' : '⚙️ ใส่ Finnhub API Key ในหน้า Settings เพื่อดูราคา real-time'}
+    </div>`;
+    return;
+  }
+
+  const totalPnL     = totalValueTHB - totalInvestedTHB;
+  const totalPnLPct  = totalInvestedTHB ? (totalPnL/totalInvestedTHB*100) : 0;
+  const todayPnL     = rows.reduce((s,r) => s+(r?.pnlToday||0), 0);
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin-bottom:.75rem">
+      <div style="background:var(--bg);border-radius:10px;padding:.65rem .75rem;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted)">มูลค่าพอร์ต</div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--accent)">${CONFIG.currency}${Math.round(totalValueTHB).toLocaleString()}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:.65rem .75rem;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted)">กำไร/ขาดทุน</div>
+        <div style="font-size:1.1rem;font-weight:700;color:${totalPnL>=0?'#34d399':'#f87171'}">${totalPnL>=0?'+':''}${CONFIG.currency}${Math.round(Math.abs(totalPnL)).toLocaleString()}</div>
+        <div style="font-size:.65rem;color:${totalPnL>=0?'#34d399':'#f87171'}">${totalPnLPct>=0?'+':''}${totalPnLPct.toFixed(2)}%</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:.65rem .75rem;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted)">วันนี้ +/-</div>
+        <div style="font-size:1.1rem;font-weight:700;color:${todayPnL>=0?'#34d399':'#f87171'}">${todayPnL>=0?'+':''}${CONFIG.currency}${Math.round(Math.abs(todayPnL)).toLocaleString()}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:.65rem .75rem;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted)">USD/THB</div>
+        <div style="font-size:1.1rem;font-weight:700">${usdThbRate.toFixed(2)}</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.4rem">
+      ${rows.map(r => `
+        <div style="display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:.6rem;padding:.6rem .75rem;background:var(--bg);border-radius:10px">
+          <div style="font-size:1rem">${r.p.flag}</div>
+          <div>
+            <div style="font-size:.82rem;font-weight:600">${r.p.ticker} <span style="font-size:.65rem;color:var(--muted);font-weight:400">${r.p.name}</span></div>
+            <div style="font-size:.68rem;color:var(--muted)">${r.q.c.toFixed(2)} · ${r.shares.toFixed(3)} หุ้น (approx)</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:.85rem;font-weight:600">${CONFIG.currency}${Math.round(r.currentVal).toLocaleString()}</div>
+            <div style="font-size:.68rem;color:${r.pnlToday>=0?'#34d399':'#f87171'}">${r.pnlToday>=0?'+':''}${CONFIG.currency}${Math.round(Math.abs(r.pnlToday)).toLocaleString()} วันนี้</div>
+          </div>
+          <div style="font-size:.78rem;font-weight:700;color:${r.changePct>=0?'#34d399':'#f87171'};min-width:50px;text-align:right">
+            ${r.changePct>=0?'+':''}${r.changePct?.toFixed(2)}%
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="font-size:.62rem;color:var(--muted);text-align:right;margin-top:.4rem">
+      อัปเดตทุก 1 นาที · Finnhub · ${new Date().toLocaleTimeString('th-TH')}
+    </div>
+  `;
+}
+
+function renderMarketCards() {
+  const el = document.getElementById('market-cards');
+  if (!el) return;
+  el.innerHTML = MARKET_DATA.map(s => {
+    const q = liveQuotes[s.ticker];
+    const hasLive = q && q.c;
+    return `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.65rem">
+        <div>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <span style="font-size:.9rem">${s.flag||''}</span>
+            <span style="font-size:1rem;font-weight:700;color:var(--accent)">${s.ticker}</span>
+            <span style="font-size:.62rem;background:rgba(167,139,250,.12);color:var(--accent);border-radius:6px;padding:.1rem .45rem;font-weight:600">${s.type}</span>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.1rem">${s.name}</div>
+        </div>
+        <span style="font-size:.68rem;font-weight:600;padding:.2rem .55rem;border-radius:6px;background:rgba(52,211,153,.08);color:${s.ratingColor}">${s.rating}</span>
+      </div>
+
+      ${hasLive ? `
+      <div style="display:flex;align-items:baseline;gap:.5rem;margin-bottom:.6rem">
+        <span style="font-size:1.4rem;font-weight:700">${q.c.toFixed(2)}</span>
+        <span style="font-size:.85rem;font-weight:700;color:${q.dp>=0?'#34d399':'#f87171'}">${q.dp>=0?'+':''}${q.dp?.toFixed(2)}%</span>
+        <span style="font-size:.68rem;color:${q.d>=0?'#34d399':'#f87171'}">${q.d>=0?'+':''}${q.d?.toFixed(2)}</span>
+        <span style="margin-left:auto;font-size:.62rem;color:var(--muted);background:rgba(52,211,153,.08);padding:.1rem .4rem;border-radius:5px">🟢 LIVE</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.3rem;margin-bottom:.65rem">
+        <div style="background:var(--bg);border-radius:8px;padding:.35rem .4rem;text-align:center">
+          <div style="font-size:.58rem;color:var(--muted)">เปิด</div>
+          <div style="font-size:.75rem;font-weight:600">${q.o?.toFixed(2)}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:.35rem .4rem;text-align:center">
+          <div style="font-size:.58rem;color:var(--muted)">สูง</div>
+          <div style="font-size:.75rem;font-weight:600;color:#34d399">${q.h?.toFixed(2)}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:.35rem .4rem;text-align:center">
+          <div style="font-size:.58rem;color:var(--muted)">ต่ำ</div>
+          <div style="font-size:.75rem;font-weight:600;color:#f87171">${q.l?.toFixed(2)}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:.35rem .4rem;text-align:center">
+          <div style="font-size:.58rem;color:var(--muted)">P/E</div>
+          <div style="font-size:.75rem;font-weight:600">${s.pe_static ? s.pe_static+'x' : 'ETF'}</div>
+        </div>
+      </div>
+      <div style="margin-bottom:.65rem">
+        <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);margin-bottom:.25rem">
+          <span>ต่ำสุด ${q.l?.toFixed(2)}</span><span>สูงสุด ${q.h?.toFixed(2)}</span>
+        </div>
+        <div style="height:4px;background:var(--border);border-radius:99px;overflow:hidden">
+          <div style="height:100%;background:linear-gradient(90deg,#f87171,#fbbf24,#34d399);border-radius:99px;width:${Math.min(100,Math.max(0,((q.c-q.l)/(q.h-q.l||1)*100))).toFixed(0)}%"></div>
+        </div>
+        <div style="font-size:.6rem;color:var(--muted);margin-top:.2rem;text-align:center">ราคาปัจจุบันอยู่ในช่วงวันนี้ = ${Math.min(100,Math.max(0,((q.c-q.l)/(q.h-q.l||1)*100))).toFixed(0)}%</div>
+      </div>` : `
+      <div style="background:var(--bg);border-radius:8px;padding:.6rem .75rem;margin-bottom:.65rem;display:flex;align-items:center;gap:.5rem">
+        ${CONFIG.finnhubKey ? '<span style="font-size:.75rem;color:var(--muted)">⏳ กำลังโหลดราคา...</span>' : '<span style="font-size:.75rem;color:var(--muted)">⚙️ ใส่ Finnhub API Key ในหน้า Settings</span>'}
+      </div>`}
+
+      <div style="font-size:.72rem;color:var(--text);background:var(--bg);border-radius:8px;padding:.5rem .65rem;margin-bottom:.6rem;line-height:1.7">
+        ${s.highlights.map(h=>`• ${h}`).join('<br>')}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:.35rem">
+          <span style="font-size:.65rem;color:var(--muted)">ความเสี่ยง:</span>
+          <span style="font-size:.65rem;font-weight:700;color:${s.riskColor}">${s.risk}</span>
+        </div>
+        <span style="font-size:.65rem;color:var(--muted)">${s.earningsDate !== 'ไม่มี (ETF)' ? 'Earnings: '+s.earningsDate : ''}</span>
+      </div>
+      <div style="margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--border);font-size:.72rem;color:var(--accent);font-style:italic">
+        💡 ${s.summary}
+      </div>
+    </div>`
+  }).join('');
+}
+
+// ============================================================
+// INVESTMENTS — เพิ่ม apiPost + แก้ asset value ใน select
+// ============================================================
+async function addInvestment() {
+  const asset  = document.getElementById('inv-asset').value;
+  const amount = parseFloat(document.getElementById('inv-amount').value);
+  const date   = document.getElementById('inv-date').value;
+  const note   = document.getElementById('inv-note').value.trim().replace(/[=+\-@]/g,'');
+  if (!amount || amount <= 0) { toast('Please enter a valid amount', false); return; }
+  if (!date)                  { toast('Please select a date', false); return; }
+
+  const inv = { id:uid(), created_at:new Date().toISOString(), date, asset, amount, note };
+
+  if (CONFIG.apiUrl) {
+    setLoading('btn-add-inv', true);
+    try {
+      const r = await apiPost({ action:'addInvestment', ...inv });
+      if (!r.success) { toast('API error: ' + r.error, false); setLoading('btn-add-inv', false); return; }
+      toast('Investment saved to Sheet! ✓');
+    } catch(e) {
+      toast('API failed — saved locally only', false);
+    }
+    setLoading('btn-add-inv', false);
+  }
+
+  state.investments.unshift(inv);
+  save();
+  closeInvestModal();
+  document.getElementById('inv-amount').value = '';
+  document.getElementById('inv-note').value = '';
+  if (!CONFIG.apiUrl) toast('Investment added (local)');
+  renderInvestments();
+}
+
+function openEditInvestment(id) {
+  const inv = state.investments.find(i => i.id === id);
+  if (!inv) return;
+  document.getElementById('edit-inv-id').value    = inv.id;
+  document.getElementById('edit-inv-asset').value = inv.asset;
+  document.getElementById('edit-inv-amount').value= inv.amount;
+  document.getElementById('edit-inv-date').value  = inv.date;
+  document.getElementById('edit-inv-note').value  = inv.note || '';
+  document.getElementById('modal-edit-invest').classList.add('open');
+}
+
+function closeEditInvestModal() { document.getElementById('modal-edit-invest').classList.remove('open'); }
+
+async function saveEditInvestment() {
+  const id     = document.getElementById('edit-inv-id').value;
+  const asset  = document.getElementById('edit-inv-asset').value;
+  const amount = parseFloat(document.getElementById('edit-inv-amount').value);
+  const date   = document.getElementById('edit-inv-date').value;
+  const note   = document.getElementById('edit-inv-note').value.trim().replace(/[=+\-@]/g,'');
+  if (!amount || amount <= 0) { toast('Please enter a valid amount', false); return; }
+  if (!date)                  { toast('Please select a date', false); return; }
+
+  const inv = state.investments.find(i => i.id === id);
+  if (!inv) return;
+  inv.asset = asset; inv.amount = amount; inv.date = date; inv.note = note;
+
+  if (CONFIG.apiUrl) {
+    setLoading('btn-save-inv', true);
+    try {
+      const r = await apiPost({ action:'updateInvestment', ...inv });
+      if (!r.success) toast('Sync error: ' + r.error, false); else toast('Investment updated & synced ✓');
+    } catch(e) { toast('Saved locally — sync failed', false); }
+    setLoading('btn-save-inv', false);
+  } else { toast('Investment updated'); }
+
+  save();
+  closeEditInvestModal();
+  renderInvestments();
+}
+
+async function deleteInvestment(id) {
+  if (!confirm('Delete this investment?')) return;
+  if (CONFIG.apiUrl) {
+    try { await apiPost({ action:'deleteInvestment', id }); } catch(e) {}
+  }
+  state.investments = state.investments.filter(i => i.id !== id);
+  save();
+  closeEditInvestModal();
+  renderInvestments();
+  toast('Deleted');
+}
+
+function renderInvestments() {
+  const assetTotals = {};
+  state.investments.forEach(i => { assetTotals[i.asset] = (assetTotals[i.asset]||0) + Number(i.amount); });
+
+  const cardsEl = document.getElementById('invest-cards');
+  const assets  = Object.keys(assetTotals);
+  if (!assets.length) {
+    cardsEl.innerHTML = '<div class="card-sm" style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted)">No investments yet. <button class="btn-primary" onclick="openInvestModal()" style="margin-left:.5rem">Add one</button></div>';
+  } else {
+    cardsEl.innerHTML = assets.map(a => `
+      <div class="card-sm">
+        <div style="font-size:1.5rem;margin-bottom:.5rem">${catEmoji[a]||'💰'}</div>
+        <div style="font-size:.72rem;color:var(--muted);font-weight:500">${a}</div>
+        <div style="font-size:1.2rem;font-weight:700;color:var(--accent);margin-top:.25rem">${fmt(assetTotals[a])}</div>
+      </div>
+    `).join('') + `<div class="card-sm" style="display:flex;flex-direction:column;justify-content:center;align-items:center;cursor:pointer;border-style:dashed" onclick="openInvestModal()"><div style="font-size:1.5rem">+</div><div style="font-size:.75rem;color:var(--muted)">Add</div></div>`;
+  }
+
+  document.getElementById('invest-list').innerHTML = state.investments.map(i => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:var(--surface2);border-radius:10px">
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <span>${catEmoji[i.asset]||'💰'}</span>
+        <div><div style="font-size:.82rem;font-weight:500">${i.asset}</div><div style="font-size:.7rem;color:var(--muted)">${i.date}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <div style="text-align:right">
+          <div style="font-size:.85rem;font-weight:600;color:var(--accent)">${fmt(i.amount)}</div>
+          ${i.note ? `<div style="font-size:.65rem;color:var(--muted)">${i.note}</div>` : ''}
+        </div>
+        <button onclick="openEditInvestment('${i.id}')" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);color:var(--accent);border-radius:8px;padding:.3rem .5rem;cursor:pointer;font-size:.75rem">✏️</button>
+      </div>
+    </div>
+  `).join('') || '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.8rem">No records</div>';
+
+  renderMarketCards();
+
+  if (charts.invest) charts.invest.destroy();
+  const ctx = document.getElementById('invest-chart')?.getContext('2d');
+  if (ctx) {
+    const sorted = [...state.investments].sort((a,b) => a.date.localeCompare(b.date));
+    let running = 0;
+    charts.invest = new Chart(ctx, {
+      type:'line',
+      data:{ labels:sorted.map(i=>i.date.slice(5)), datasets:[{ data:sorted.map(i=>{running+=Number(i.amount);return running;}), borderColor:'#a78bfa', backgroundColor:'rgba(167,139,250,.08)', fill:true, tension:.4, pointRadius:3, pointBackgroundColor:'#a78bfa' }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{color:'#8b8aa0',font:{size:9}}}, y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b8aa0',font:{size:9},callback:v=>CONFIG.currency+v.toLocaleString()}} } }
+    });
+  }
+}
+
+// ============================================================
+// GOALS — เพิ่ม apiPost ทั้ง add และ update
+// ============================================================
+async function addGoal() {
+  const name    = document.getElementById('goal-name').value.trim().replace(/[<>]/g,'');
+  const target  = parseFloat(document.getElementById('goal-target').value);
+  const current = parseFloat(document.getElementById('goal-current').value) || 0;
+  const deadline= document.getElementById('goal-deadline').value;
+  if (!name)             { toast('Please enter a goal name', false); return; }
+  if (!target || target <= 0) { toast('Please enter a target amount', false); return; }
+
+  const goal = { id:uid(), goal_name:name, target_amount:target, current_amount:current, deadline };
+
+  if (CONFIG.apiUrl) {
+    setLoading('btn-add-goal', true);
+    try {
+      const r = await apiPost({ action:'addGoal', ...goal });
+      if (!r.success) { toast('API error: ' + r.error, false); setLoading('btn-add-goal', false); return; }
+      toast('Goal saved to Sheet! ✓');
+    } catch(e) {
+      toast('API failed — saved locally only', false);
+    }
+    setLoading('btn-add-goal', false);
+  }
+
+  state.goals.push(goal);
+  save();
+  closeGoalModal();
+  document.getElementById('goal-name').value = '';
+  document.getElementById('goal-target').value = '';
+  document.getElementById('goal-current').value = '0';
+  document.getElementById('goal-deadline').value = '';
+  if (!CONFIG.apiUrl) toast('Goal created (local)');
+  renderGoals();
+}
+
+async function deleteGoal(id) {
+  if (CONFIG.apiUrl) {
+    try { await apiPost({ action:'deleteGoal', id }); } catch(e) {}
+  }
+  state.goals = state.goals.filter(g => g.id !== id);
+  save();
+  renderGoals();
+  toast('Goal removed');
+}
+
+async function updateGoalAmount(id) {
+  const g = state.goals.find(g => g.id === id);
+  if (!g) return;
+  const val = parseFloat(prompt(`Current amount for "${g.goal_name}":`)||'');
+  if (isNaN(val) || val < 0) { toast('Invalid amount', false); return; }
+  g.current_amount = val;
+
+  if (CONFIG.apiUrl) {
+    try {
+      const r = await apiPost({ action:'updateGoal', id, current_amount:val });
+      if (!r.success) toast('Sync error: ' + r.error, false);
+      else toast('Progress updated & synced! ✓');
+    } catch(e) {
+      toast('Saved locally — sync failed', false);
+    }
+  } else {
+    toast('Progress updated (local)');
+  }
+
+  save();
+  renderGoals();
+}
+
+function renderGoals() {
+  const el = document.getElementById('goals-grid');
+  if (!state.goals.length) {
+    el.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">No goals yet. Set one and start saving! 🎯</div>';
+    return;
+  }
+  el.innerHTML = state.goals.map(g => {
+    const pct      = Math.min(100, Math.round(g.current_amount / g.target_amount * 100));
+    const daysLeft = g.deadline ? Math.ceil((new Date(g.deadline) - Date.now()) / (1000*60*60*24)) : null;
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">
+        <div>
+          <div style="font-size:.95rem;font-weight:600">🎯 ${g.goal_name}</div>
+          ${g.deadline ? `<div style="font-size:.72rem;color:${daysLeft<30?'#fbbf24':'var(--muted)'};margin-top:.2rem">${daysLeft>0?daysLeft+' days left':'Deadline passed'}</div>` : ''}
+        </div>
+        <button onclick="deleteGoal('${g.id}')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:.9rem">✕</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted);margin-bottom:.4rem">
+        <span>${fmt(g.current_amount)}</span>
+        <span>${pct}% · ${fmt(g.target_amount)}</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <button onclick="updateGoalAmount('${g.id}')" class="btn-ghost" style="width:100%;margin-top:.75rem;font-size:.78rem">Update Progress</button>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// ANALYTICS
+// ============================================================
+function renderAnalytics() {
+  if (charts.trend) charts.trend.destroy();
+  const ctx = document.getElementById('trend-chart')?.getContext('2d');
+  if (ctx) {
+    const months=[],data=[];
+    for (let i=5;i>=0;i--) {
+      const d=new Date(); d.setMonth(d.getMonth()-i);
+      const m=d.toISOString().slice(0,7);
+      months.push(d.toLocaleString('default',{month:'short'}));
+      data.push(state.transactions.filter(t=>t.date.startsWith(m)&&t.type==='Expense').reduce((s,t)=>s+t.amount,0));
+    }
+    charts.trend = new Chart(ctx, {
+      type:'line',
+      data:{ labels:months, datasets:[{ label:'Expenses', data, borderColor:'#f87171', backgroundColor:'rgba(248,113,113,.1)', fill:true, tension:.4, pointRadius:4, pointBackgroundColor:'#f87171' }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{color:'#8b8aa0'}}, y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b8aa0',callback:v=>CONFIG.currency+v.toLocaleString()}} } }
+    });
+  }
+
+  const cats={};
+  state.transactions.filter(t=>t.type==='Expense').forEach(t=>{ cats[t.category]=(cats[t.category]||0)+t.amount; });
+  const sorted = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const max = sorted[0]?.[1] || 1;
+  document.getElementById('analytics-cats').innerHTML = sorted.slice(0,6).map(([cat,amt]) => `
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.3rem"><span>${catEmoji[cat]||'📦'} ${cat}</span><span style="color:var(--muted)">${fmt(amt)}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(amt/max*100)}%;background:linear-gradient(90deg,#f87171,#fb923c)"></div></div>
+    </div>
+  `).join('') || '<div style="color:var(--muted);font-size:.8rem">No data yet</div>';
+
+  const now=thisMonth();
+  const mTx=state.transactions.filter(t=>t.date.startsWith(now));
+  const income =mTx.filter(t=>t.type==='Income').reduce((s,t)=>s+t.amount,0);
+  const expense=mTx.filter(t=>t.type==='Expense').reduce((s,t)=>s+t.amount,0);
+  const net=income-expense;
+  document.getElementById('analytics-summary').innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:.5rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Total Income</span><span style="color:#34d399;font-weight:600">${fmt(income)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:.5rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Total Expenses</span><span style="color:#f87171;font-weight:600">${fmt(expense)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:.5rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Net Balance</span><span style="color:${net>=0?'#34d399':'#f87171'};font-weight:700">${fmt(net)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:.5rem 0"><span style="color:var(--muted)">Savings Rate</span><span style="color:#fbbf24;font-weight:600">${income>0?Math.round(net/income*100):0}%</span></div>
+  `;
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function loadSettingsForm() {
+  document.getElementById('cfg-url').value      = localStorage.getItem('cfg_url') || '';
+  document.getElementById('cfg-key').value      = localStorage.getItem('cfg_key') || '';
+  document.getElementById('cfg-currency').value = localStorage.getItem('cfg_currency') || '฿';
+  document.getElementById('cfg-finnhub').value  = localStorage.getItem('cfg_finnhub') || '';
+  document.getElementById('cfg-gemini').value   = localStorage.getItem('cfg_gemini') || '';
+  document.getElementById('api-status').style.display = 'none';
+}
+function saveSettings() {
+  const url     = document.getElementById('cfg-url').value.trim();
+  const key     = document.getElementById('cfg-key').value.trim();
+  const cur     = document.getElementById('cfg-currency').value.trim() || '฿';
+  const finnhub = document.getElementById('cfg-finnhub').value.trim();
+  const gemini  = document.getElementById('cfg-gemini').value.trim();
+  localStorage.setItem('cfg_url', url);
+  localStorage.setItem('cfg_key', key);
+  localStorage.setItem('cfg_currency', cur);
+  localStorage.setItem('cfg_finnhub', finnhub);
+  localStorage.setItem('cfg_gemini', gemini);
+  toast('Settings saved!');
+}
+function clearAllData() {
+  if (!confirm('Clear ALL local data? This cannot be undone.')) return;
+  state = { transactions:[], investments:[], goals:[] };
+  save();
+  toast('All data cleared');
+  renderDashboard();
+}
+
+// ============================================================
+// DEMO DATA
+// ============================================================
+function loadDemoData() {
+  const now = new Date();
+  const d = n => { const x=new Date(now); x.setDate(x.getDate()-n); return x.toISOString().slice(0,10); };
+  state.transactions = [
+    {id:uid(),created_at:now.toISOString(),date:d(1), type:'Income', category:'Salary',        amount:45000,note:'Monthly salary'},
+    {id:uid(),created_at:now.toISOString(),date:d(2), type:'Income', category:'Freelance',     amount:8500, note:'Web design project'},
+    {id:uid(),created_at:now.toISOString(),date:d(3), type:'Expense',category:'Food',          amount:1200, note:'Groceries'},
+    {id:uid(),created_at:now.toISOString(),date:d(4), type:'Expense',category:'Transport',     amount:800,  note:'Grab & fuel'},
+    {id:uid(),created_at:now.toISOString(),date:d(5), type:'Expense',category:'Shopping',      amount:3200, note:'New shoes'},
+    {id:uid(),created_at:now.toISOString(),date:d(6), type:'Expense',category:'Bills',         amount:2100, note:'Internet + electric'},
+    {id:uid(),created_at:now.toISOString(),date:d(8), type:'Expense',category:'Entertainment', amount:600,  note:'Netflix + games'},
+    {id:uid(),created_at:now.toISOString(),date:d(10),type:'Expense',category:'Food',          amount:950,  note:'Restaurant week'},
+    {id:uid(),created_at:now.toISOString(),date:d(12),type:'Expense',category:'Education',     amount:2500, note:'Online course'},
+    {id:uid(),created_at:now.toISOString(),date:d(15),type:'Income', category:'Freelance',     amount:5000, note:'Logo design'},
+  ];
+  state.investments = [
+    {id:uid(),created_at:now.toISOString(),date:d(5), asset:'Bitcoin',amount:5000, note:'Monthly DCA'},
+    {id:uid(),created_at:now.toISOString(),date:d(10),asset:'ETF',    amount:8000, note:'SET50 ETF'},
+    {id:uid(),created_at:now.toISOString(),date:d(20),asset:'Gold',   amount:3000, note:'Physical gold'},
+    {id:uid(),created_at:now.toISOString(),date:d(30),asset:'Stock',  amount:6000, note:'PTT shares'},
+    {id:uid(),created_at:now.toISOString(),date:d(35),asset:'Savings',amount:10000,note:'Fixed deposit'},
+  ];
+  state.goals = [
+    {id:uid(),goal_name:'Emergency Fund',target_amount:150000,current_amount:62000, deadline:'2026-12-31'},
+    {id:uid(),goal_name:'MacBook Pro',   target_amount:55000, current_amount:23000, deadline:'2026-08-01'},
+    {id:uid(),goal_name:'Vacation Fund', target_amount:30000, current_amount:8500,  deadline:'2026-10-01'},
+  ];
+  save();
+  toast('Demo data loaded! 🎉');
+  renderDashboard();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('tx-date').value = new Date().toISOString().slice(0,10);
+  ['btn-add-tx','btn-add-inv','btn-add-goal'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.dataset.label = b.textContent;
+  });
+  renderDashboard();
+  // auto sync จาก Sheet ถ้ามี API — ไม่รอ ทำ background
+  autoSyncOnLoad();
+  if (!state.transactions.length && !state.investments.length) {
+    setTimeout(() => toast('👋 ใส่ Apps Script URL ใน Settings เพื่อ sync ข้อมูล หรือกด Load Demo Data'), 1000);
+  }
+});
+</script>
+</body>
+</html>
