@@ -37,10 +37,11 @@
   .modal{background:rgba(15,0,20,0.65);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(167,139,250,0.25);border-radius:20px;padding:1.5rem;width:100%;max-width:420px}
   .chip{display:inline-flex;align-items:center;padding:.3rem .75rem;border-radius:99px;font-size:.75rem;font-weight:500;cursor:pointer;border:1px solid var(--border);color:var(--muted);transition:all .15s}
   .chip.active,.chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(167,139,250,.1)}
-  #sidebar{width:220px;min-width:220px;background:rgba(10,0,18,0.55);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid rgba(167,139,250,0.15);display:flex;flex-direction:column;padding:1.25rem;gap:.25rem;transition:transform .3s}
+  #sidebar{width:220px;min-width:220px;background:rgba(10,0,18,0.55);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid rgba(167,139,250,0.15);display:flex;flex-direction:column;padding:1.25rem;gap:.25rem;transition:transform .3s,width .28s,min-width .28s,padding .28s;overflow:hidden}
+  #sidebar.sb-closed{width:0;min-width:0;padding-left:0;padding-right:0}
   .main-content{flex:1;overflow-y:auto;padding:1.5rem;max-height:100vh}
   .fab{display:none;position:fixed;bottom:1.5rem;right:1.5rem;z-index:50;width:56px;height:56px;border-radius:50%;background:var(--accent2);color:#fff;font-size:1.5rem;border:none;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(124,58,237,.4)}
-  @media(max-width:768px){#sidebar{position:fixed;left:0;top:0;bottom:0;z-index:60;transform:translateX(-100%)}.main-content{padding:1rem}.fab{display:flex}#menu-btn{display:flex!important}}
+  @media(max-width:768px){#sidebar{position:fixed;left:0;top:0;bottom:0;z-index:60;transform:translateX(-100%);width:220px;min-width:220px;padding:1.25rem}.main-content{padding:1rem}.fab{display:flex}}
 
   /* ── Responsive grid utilities ─────────────────── */
   .r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
@@ -184,7 +185,7 @@ input:focus,select:focus,textarea:focus{
 <div class="main-content" id="main">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
     <div style="display:flex;align-items:center;gap:.75rem">
-      <button id="menu-btn" onclick="openSidebar()" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:.4rem .6rem;cursor:pointer;font-size:1.1rem">☰</button>
+      <button id="menu-btn" onclick="toggleSidebar()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:.4rem .6rem;cursor:pointer;font-size:1.1rem">☰</button>
       <h1 id="page-title" style="font-size:1.25rem;font-weight:700">Dashboard</h1>
     </div>
     <div style="display:flex;gap:.5rem;align-items:center">
@@ -570,8 +571,20 @@ function navigate(page) {
   if (page === 'settings')     loadSettingsForm();
 }
 
-function openSidebar()  { document.getElementById('sidebar').style.transform = 'translateX(0)'; document.getElementById('overlay').classList.add('open'); }
-function closeSidebar() { document.getElementById('sidebar').style.transform = ''; document.getElementById('overlay').classList.remove('open'); }
+function openSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.classList.remove('sb-closed');
+  if (window.innerWidth <= 768) { sb.style.transform = 'translateX(0)'; document.getElementById('overlay').classList.add('open'); }
+}
+function closeSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.classList.add('sb-closed');
+  sb.style.transform = '';
+  document.getElementById('overlay').classList.remove('open');
+}
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.contains('sb-closed') ? openSidebar() : closeSidebar();
+}
 
 // ============================================================
 // MODALS
