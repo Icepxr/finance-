@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#12052a"/>
+      <stop offset="100%" stop-color="#050811"/>
+    </linearGradient>
+    <radialGradient id="glow-tl" cx="20%" cy="20%" r="65%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#050811" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-br" cx="80%" cy="82%" r="60%">
+      <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#050811" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="v-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e879f9"/>
+      <stop offset="40%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="50%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <filter id="glow-sm" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-lg" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="ekg-glow" x="-10%" y="-60%" width="120%" height="220%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="rounded">
+      <rect width="512" height="512" rx="112" ry="112"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#rounded)">
+    <!-- Background -->
+    <rect width="512" height="512" fill="url(#bg-grad)"/>
+    <rect width="512" height="512" fill="url(#glow-tl)"/>
+    <rect width="512" height="512" fill="url(#glow-br)"/>
+
+    <!-- Subtle scan lines -->
+    <line x1="0" y1="168" x2="512" y2="168" stroke="rgba(168,85,247,0.07)" stroke-width="1"/>
+    <line x1="0" y1="178" x2="512" y2="178" stroke="rgba(168,85,247,0.04)" stroke-width="1"/>
+    <line x1="0" y1="338" x2="512" y2="338" stroke="rgba(56,189,248,0.07)" stroke-width="1"/>
+    <line x1="0" y1="348" x2="512" y2="348" stroke="rgba(56,189,248,0.04)" stroke-width="1"/>
+
+    <!-- EKG heartbeat line -->
+    <polyline
+      points="0,292 72,292 105,232 136,352 164,192 194,292 248,292 268,250 292,334 316,292 512,292"
+      fill="none" stroke="#38bdf8" stroke-width="5.5"
+      stroke-linecap="round" stroke-linejoin="round"
+      opacity="0.5" filter="url(#ekg-glow)"/>
+
+    <!-- V glow halo -->
+    <path d="M110,108 L230,390 L256,422 L282,390 L402,108 L352,108 L256,338 L160,108 Z"
+      fill="#a855f7" opacity="0.22" filter="url(#glow-lg)"/>
+
+    <!-- V main letter -->
+    <path d="M110,108 L230,390 L256,422 L282,390 L402,108 L352,108 L256,338 L160,108 Z"
+      fill="url(#v-grad)" filter="url(#glow-sm)"/>
+
+    <!-- Corner accent dots -->
+    <circle cx="56" cy="56" r="5" fill="#c084fc" opacity="0.7"/>
+    <circle cx="456" cy="56" r="5" fill="#38bdf8" opacity="0.7"/>
+    <circle cx="56" cy="456" r="5" fill="#38bdf8" opacity="0.7"/>
+    <circle cx="456" cy="456" r="5" fill="#c084fc" opacity="0.7"/>
+
+    <!-- Border ring -->
+    <rect width="512" height="512" rx="112" ry="112"
+      fill="none" stroke="url(#ring-grad)" stroke-width="5" opacity="0.7"/>
+  </g>
+</svg>
