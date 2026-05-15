@@ -10,13 +10,14 @@
    ============================================================ */
 
 :root {
-    --bg: #050811;
-    --bg-2: #0a0f1e;
-    --surface: rgba(20, 30, 60, 0.45);
-    --border: rgba(99, 91, 255, 0.18);
-    --border-bright: rgba(167, 139, 250, 0.45);
+    --bg: #04030d;
+    --bg-2: #0a0518;
+    --surface: rgba(30, 18, 60, 0.35);
+    --border: rgba(168, 85, 247, 0.18);
+    --border-bright: rgba(192, 132, 252, 0.45);
 
     --neon-purple: #a855f7;
+    --neon-violet: #c084fc;
     --neon-blue:   #38bdf8;
     --neon-cyan:   #22d3ee;
     --neon-pink:   #ec4899;
@@ -24,16 +25,23 @@
     --neon-gold:   #fbbf24;
     --neon-red:    #f87171;
 
-    --text: #e5e7eb;
-    --text-muted: #94a3b8;
-    --text-faint: #64748b;
+    --text: #f1eaff;
+    --text-muted: #b6a8d6;
+    --text-faint: #7a6fa0;
 
     --font-display: 'Orbitron', 'Inter', system-ui, sans-serif;
     --font-body:    'Inter', 'Sarabun', system-ui, sans-serif;
 
-    --radius: 12px;
-    --radius-sm: 8px;
-    --radius-lg: 16px;
+    --radius: 16px;
+    --radius-sm: 12px;
+    --radius-lg: 22px;
+    --radius-pill: 999px;
+
+    /* Glass tokens (iOS feel) */
+    --glass-bg: linear-gradient(135deg, rgba(168, 85, 247, 0.10) 0%, rgba(30, 14, 60, 0.32) 40%, rgba(56, 189, 248, 0.06) 100%);
+    --glass-border: 1px solid rgba(192, 132, 252, 0.22);
+    --glass-blur: blur(24px) saturate(160%);
+    --glass-shadow: 0 8px 32px rgba(20, 0, 50, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -51,26 +59,50 @@ html, body {
 
 body {
     background:
-        radial-gradient(ellipse at 20% 0%, rgba(168, 85, 247, 0.18) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 100%, rgba(56, 189, 248, 0.16) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 50%, rgba(236, 72, 153, 0.06) 0%, transparent 60%),
-        var(--bg);
+        radial-gradient(ellipse 80% 60% at 15% -5%, rgba(168, 85, 247, 0.55) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 55% at 90% 10%, rgba(120, 50, 255, 0.40) 0%, transparent 55%),
+        radial-gradient(ellipse 90% 65% at 50% 110%, rgba(192, 132, 252, 0.35) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 45% at 85% 90%, rgba(236, 72, 153, 0.22) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 10% 60%, rgba(56, 189, 248, 0.18) 0%, transparent 65%),
+        linear-gradient(180deg, #08031a 0%, #04030d 50%, #0a0220 100%);
     background-attachment: fixed;
 }
 
-/* Animated grid background */
+/* Aurora — slowly drifting purple aura */
 body::before {
+    content: '';
+    position: fixed;
+    inset: -10%;
+    background:
+        radial-gradient(ellipse 40% 30% at 30% 30%, rgba(168, 85, 247, 0.35), transparent 60%),
+        radial-gradient(ellipse 35% 25% at 70% 70%, rgba(99, 102, 241, 0.30), transparent 60%),
+        radial-gradient(ellipse 30% 22% at 80% 20%, rgba(236, 72, 153, 0.18), transparent 60%);
+    filter: blur(60px);
+    opacity: 0.85;
+    pointer-events: none;
+    z-index: 0;
+    animation: auraDrift 24s ease-in-out infinite alternate;
+}
+
+@keyframes auraDrift {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(-3%, 2%) scale(1.05); }
+    100% { transform: translate(3%, -2%) scale(0.98); }
+}
+
+/* Subtle dot grid overlay (neural-net field) */
+body::after {
     content: '';
     position: fixed;
     inset: 0;
     background-image:
-        linear-gradient(rgba(99, 91, 255, 0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(99, 91, 255, 0.04) 1px, transparent 1px);
-    background-size: 64px 64px;
+        radial-gradient(circle at center, rgba(192, 132, 252, 0.18) 1px, transparent 1.4px);
+    background-size: 28px 28px;
     pointer-events: none;
     z-index: 0;
-    mask-image: radial-gradient(ellipse at center, black 0%, transparent 85%);
-    -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 85%);
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 80%);
+    opacity: 0.55;
 }
 
 button {
@@ -104,13 +136,14 @@ input, select, textarea {
     align-items: center;
     gap: 16px;
     padding: 12px 22px;
-    background: linear-gradient(180deg, rgba(20, 30, 60, 0.85), rgba(5, 8, 17, 0.65));
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(30, 14, 60, 0.55), rgba(10, 4, 30, 0.35));
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border-bottom: 1px solid rgba(192, 132, 252, 0.18);
     flex-shrink: 0;
     position: relative;
     z-index: 50;
+    box-shadow: 0 4px 24px rgba(20, 0, 50, 0.4);
 }
 
 .topnav::after {
@@ -144,15 +177,15 @@ input, select, textarea {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 9px 16px;
-    border-radius: 8px;
+    padding: 9px 18px;
+    border-radius: 999px;
     color: var(--text-muted);
     font-weight: 600;
     font-size: 12px;
     letter-spacing: 1px;
     text-transform: uppercase;
     font-family: var(--font-display);
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
     border: 1px solid transparent;
     background: transparent;
     white-space: nowrap;
@@ -166,11 +199,13 @@ input, select, textarea {
 }
 
 .topnav-item.active {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(56, 189, 248, 0.1));
-    color: var(--neon-cyan);
-    border-color: rgba(168, 85, 247, 0.4);
-    box-shadow: 0 0 18px rgba(168, 85, 247, 0.2), inset 0 0 12px rgba(168, 85, 247, 0.1);
-    text-shadow: 0 0 12px var(--neon-cyan);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.30), rgba(236, 72, 153, 0.18));
+    color: #fff;
+    border-color: rgba(192, 132, 252, 0.5);
+    box-shadow:
+        0 6px 22px rgba(168, 85, 247, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    text-shadow: 0 0 12px rgba(192, 132, 252, 0.7);
 }
 
 .topnav-item.active::after {
@@ -219,39 +254,49 @@ input, select, textarea {
     aspect-ratio: 3 / 2;
     max-height: 580px;
     margin-bottom: 16px;
-    border-radius: 18px;
+    border-radius: var(--radius-lg);
     background:
-        radial-gradient(ellipse at 50% 50%, rgba(168, 85, 247, 0.10) 0%, rgba(56, 189, 248, 0.04) 40%, transparent 70%),
-        linear-gradient(180deg, rgba(20, 30, 60, 0.3), rgba(5, 8, 17, 0.5));
-    border: 1px solid var(--border);
+        radial-gradient(ellipse at 50% 50%, rgba(168, 85, 247, 0.20) 0%, rgba(56, 189, 248, 0.06) 35%, transparent 70%),
+        linear-gradient(135deg, rgba(40, 18, 80, 0.35), rgba(15, 5, 35, 0.55));
+    border: var(--glass-border);
     overflow: hidden;
-    backdrop-filter: blur(8px);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-shadow), 0 0 60px rgba(168, 85, 247, 0.15);
 }
 
+/* Synapse field — fine dot/grid mesh */
 .bio-network::before {
     content: '';
     position: absolute;
     inset: 0;
     background-image:
-        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(168, 85, 247, 0.06) 40px),
-        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(56, 189, 248, 0.05) 40px);
+        radial-gradient(circle at center, rgba(192, 132, 252, 0.20) 0.8px, transparent 1.2px),
+        radial-gradient(circle at center, rgba(56, 189, 248, 0.10) 0.6px, transparent 1px);
+    background-size: 24px 24px, 60px 60px;
+    background-position: 0 0, 12px 12px;
     pointer-events: none;
-    mask-image: radial-gradient(ellipse at center, black 0%, transparent 85%);
-    -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 85%);
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 80%);
+    opacity: 0.9;
 }
 
+/* Soft glowing scan beam */
 .bio-network::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, transparent, rgba(34, 211, 238, 0.04) 50%, transparent);
-    animation: scanLine 8s linear infinite;
+    background:
+        linear-gradient(180deg, transparent, rgba(192, 132, 252, 0.06) 48%, rgba(34, 211, 238, 0.05) 52%, transparent);
+    animation: scanLine 9s ease-in-out infinite;
     pointer-events: none;
 }
 
 @keyframes scanLine {
-    0%   { transform: translateY(-100%); }
-    100% { transform: translateY(100%); }
+    0%, 100% { transform: translateY(-100%); opacity: 0; }
+    10%      { opacity: 1; }
+    50%      { transform: translateY(50%); opacity: 1; }
+    90%      { opacity: 1; }
 }
 
 /* Connection lines SVG */
@@ -266,10 +311,20 @@ input, select, textarea {
 
 .net-line {
     fill: none;
-    stroke-width: 1.5;
-    stroke-dasharray: 6 8;
-    opacity: 0.65;
+    stroke-width: 1.4;
+    stroke-dasharray: 4 9;
+    opacity: 0.7;
     animation: dashFlow 4s linear infinite;
+}
+
+/* Secondary "synapse" connection lines between adjacent nodes */
+.net-synapse {
+    fill: none;
+    stroke: rgba(192, 132, 252, 0.20);
+    stroke-width: 0.6;
+    stroke-dasharray: 2 6;
+    animation: dashFlow 6s linear infinite reverse;
+    opacity: 0.55;
 }
 
 @keyframes dashFlow {
@@ -282,6 +337,34 @@ input, select, textarea {
 .net-line.vit { animation-duration: 3.8s; }
 .net-line.mp  { animation-duration: 4.2s; }
 .net-line.int { animation-duration: 3.4s; }
+
+/* Floating ambient particles */
+.bio-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+.bio-particle {
+    position: absolute;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--neon-violet);
+    box-shadow: 0 0 10px var(--neon-violet), 0 0 20px rgba(192, 132, 252, 0.4);
+    opacity: 0.7;
+    animation: particleFloat var(--dur, 8s) ease-in-out infinite;
+    animation-delay: var(--delay, 0s);
+}
+.bio-particle.c { background: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
+.bio-particle.p { background: var(--neon-pink); box-shadow: 0 0 10px var(--neon-pink); }
+.bio-particle.g { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); width: 3px; height: 3px; }
+.bio-particle.s { width: 2px; height: 2px; opacity: 0.5; }
+@keyframes particleFloat {
+    0%, 100% { transform: translate(0, 0); opacity: 0.6; }
+    25%      { transform: translate(15px, -20px); opacity: 0.9; }
+    50%      { transform: translate(-10px, -28px); opacity: 0.5; }
+    75%      { transform: translate(-18px, -10px); opacity: 0.8; }
+}
 
 /* Network nodes — positioned absolutely using --nx, --ny */
 .net-node {
@@ -315,6 +398,38 @@ input, select, textarea {
     width: 84px;
     height: 84px;
     flex-shrink: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.10), rgba(20, 8, 50, 0.55) 60%, rgba(10, 3, 30, 0.85));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        inset 0 -10px 30px rgba(0, 0, 0, 0.5),
+        0 4px 16px rgba(20, 0, 50, 0.4);
+}
+
+.node-orb::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--orb-glow, rgba(168, 85, 247, 0.45)), transparent 70%);
+    filter: blur(8px);
+    z-index: -1;
+    opacity: 0.6;
+    animation: orbPulse 3.4s ease-in-out infinite;
+}
+
+.net-node.hp  .node-orb { --orb-glow: rgba(34, 211, 238, 0.45); }
+.net-node.sta .node-orb { --orb-glow: rgba(52, 211, 153, 0.45); }
+.net-node.mp  .node-orb { --orb-glow: rgba(168, 85, 247, 0.55); }
+.net-node.str .node-orb { --orb-glow: rgba(248, 113, 113, 0.45); }
+.net-node.vit .node-orb { --orb-glow: rgba(251, 146, 60, 0.45); }
+.net-node.int .node-orb { --orb-glow: rgba(236, 72, 153, 0.45); }
+
+@keyframes orbPulse {
+    0%, 100% { transform: scale(1);   opacity: 0.5; }
+    50%      { transform: scale(1.08); opacity: 0.85; }
 }
 
 .node-ring {
@@ -326,8 +441,8 @@ input, select, textarea {
 }
 
 .node-ring-track {
-    fill: rgba(5, 8, 17, 0.7);
-    stroke: rgba(255, 255, 255, 0.06);
+    fill: transparent;
+    stroke: rgba(255, 255, 255, 0.08);
     stroke-width: 4;
 }
 
@@ -857,16 +972,18 @@ input, select, textarea {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ========== Glass Cards ========== */
+/* ========== Glass Cards (iOS feel) ========== */
 .card, .panel {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.06) 0%, rgba(20, 30, 60, 0.5) 50%, rgba(56, 189, 248, 0.05) 100%);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--border);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
     border-radius: var(--radius-lg);
     padding: 18px;
     margin-bottom: 16px;
     position: relative;
+    box-shadow: var(--glass-shadow);
+    overflow: hidden;
 }
 
 .card::before, .panel::before {
@@ -875,12 +992,25 @@ input, select, textarea {
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.5), transparent 30%, transparent 70%, rgba(56, 189, 248, 0.5));
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.55), rgba(168, 85, 247, 0.05) 35%, transparent 60%, rgba(236, 72, 153, 0.35));
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
-    opacity: 0.6;
+    opacity: 0.85;
+}
+
+/* iOS-style highlight gloss */
+.card::after, .panel::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent);
+    pointer-events: none;
+    border-radius: inherit;
+    mask-image: linear-gradient(180deg, black, transparent);
+    -webkit-mask-image: linear-gradient(180deg, black, transparent);
 }
 
 .card.danger { border-color: rgba(248, 113, 113, 0.4); }
@@ -924,16 +1054,18 @@ input, select, textarea {
 }
 
 .stat-orb {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.06), rgba(20, 30, 60, 0.5));
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    border-radius: 18px;
     padding: 12px 14px;
     display: flex;
     align-items: center;
     gap: 12px;
     position: relative;
     transition: all 0.2s ease;
+    box-shadow: var(--glass-shadow);
 }
 
 .stat-orb:hover {
@@ -1215,13 +1347,25 @@ input, select, textarea {
 
 /* ========== Quest Panel ========== */
 .quest-panel {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.06) 0%, rgba(20, 30, 60, 0.55) 50%, rgba(56, 189, 248, 0.05) 100%);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--border);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
     border-radius: var(--radius-lg);
     padding: 18px;
     margin-bottom: 16px;
     position: relative;
+    box-shadow: var(--glass-shadow);
+    overflow: hidden;
+}
+.quest-panel::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 45%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent);
+    pointer-events: none;
+    border-radius: inherit;
 }
 
 .quest-header {
@@ -1422,13 +1566,27 @@ input, select, textarea {
 }
 
 .chart-wrap {
-    height: 220px;
+    height: 150px;
     position: relative;
 }
 
 .chart-wrap.large {
-    height: 280px;
+    height: 240px;
     margin-bottom: 16px;
+}
+
+/* Compact card variant used on the dashboard mini-widgets */
+.dashboard-grid .card {
+    padding: 12px 14px;
+    margin-bottom: 0;
+}
+.dashboard-grid .card-header {
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+}
+.dashboard-grid .card-header h3 {
+    font-size: 10.5px;
+    letter-spacing: 1.4px;
 }
 
 /* ========== Activity ========== */
@@ -1442,17 +1600,19 @@ input, select, textarea {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 12px;
-    border-radius: var(--radius);
-    background: rgba(20, 30, 60, 0.4);
-    backdrop-filter: blur(8px);
-    border: 1px solid var(--border);
-    transition: all 0.2s;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(192, 132, 252, 0.12);
+    transition: all 0.25s;
 }
 
 .activity-item:hover {
-    background: rgba(168, 85, 247, 0.08);
-    border-color: var(--border-bright);
+    background: rgba(192, 132, 252, 0.10);
+    border-color: rgba(192, 132, 252, 0.32);
+    transform: translateX(2px);
 }
 
 .activity-icon {
@@ -1671,9 +1831,11 @@ input, select, textarea {
     overflow-x: auto;
     max-height: 460px;
     overflow-y: auto;
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    background: rgba(5, 8, 17, 0.4);
+    border-radius: 18px;
+    border: 1px solid rgba(192, 132, 252, 0.14);
+    background: rgba(10, 4, 30, 0.35);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .data-table {
@@ -1752,14 +1914,15 @@ input, select, textarea {
 
 /* ========== Info / Result boxes ========== */
 .info-box {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(56, 189, 248, 0.05));
-    border: 1px solid rgba(168, 85, 247, 0.3);
-    border-radius: var(--radius);
-    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.12), rgba(56, 189, 248, 0.06));
+    border: 1px solid rgba(192, 132, 252, 0.28);
+    border-radius: 18px;
+    padding: 14px 18px;
     margin-bottom: 16px;
     font-size: 13px;
     color: var(--text-muted);
     line-height: 1.6;
+    backdrop-filter: blur(8px);
 }
 
 .info-box strong { color: var(--neon-cyan); }
@@ -1997,10 +2160,11 @@ input, select, textarea {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 14px 6px 10px;
-    background: linear-gradient(135deg, rgba(20, 30, 60, 0.8), rgba(5, 8, 17, 0.5));
-    backdrop-filter: blur(8px);
-    border: 1px solid var(--border);
+    padding: 7px 15px 7px 11px;
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.16), rgba(20, 10, 40, 0.3));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(192, 132, 252, 0.22);
     border-radius: 99px;
     font-size: 11px;
     color: var(--text);
@@ -2010,6 +2174,7 @@ input, select, textarea {
     transition: all 0.2s;
     cursor: default;
     position: relative;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .buff-chip.buff {
@@ -2046,14 +2211,16 @@ input, select, textarea {
 
 .badge {
     position: relative;
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.06), rgba(20, 30, 60, 0.5));
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.10), rgba(20, 10, 40, 0.35));
+    border: 1px solid rgba(192, 132, 252, 0.16);
+    border-radius: 18px;
     padding: 16px 10px 12px 10px;
     text-align: center;
     transition: all 0.25s;
     filter: grayscale(0.9) brightness(0.55);
     cursor: default;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .badge.unlocked {
@@ -2173,12 +2340,15 @@ input, select, textarea {
 }
 
 .recipe-item {
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.06), rgba(168, 85, 247, 0.04));
-    border: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.10), rgba(168, 85, 247, 0.08));
+    border: 1px solid rgba(236, 72, 153, 0.22);
     border-left: 3px solid var(--neon-pink);
-    border-radius: 10px;
-    padding: 14px 16px;
-    transition: all 0.2s;
+    border-radius: 18px;
+    padding: 14px 18px;
+    transition: all 0.25s;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 14px rgba(236, 72, 153, 0.12);
 }
 
 .recipe-item:hover {
@@ -2274,8 +2444,8 @@ input, select, textarea {
 
 .heatmap-summary {
     display: flex;
-    gap: 14px;
-    padding-top: 8px;
+    gap: 10px;
+    padding-top: 6px;
     border-top: 1px solid var(--border);
 }
 .hm-stat {
@@ -2285,34 +2455,37 @@ input, select, textarea {
 .hm-stat-num {
     display: block;
     font-family: var(--font-display);
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 800;
     color: var(--neon-cyan);
     text-shadow: 0 0 12px var(--neon-cyan);
 }
 .hm-stat-label {
     display: block;
-    font-size: 9px;
+    font-size: 8.5px;
     color: var(--text-muted);
     font-family: var(--font-display);
-    letter-spacing: 1.5px;
+    letter-spacing: 1.2px;
     text-transform: uppercase;
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 /* ========== Nutrition Today Summary ========== */
 .nutri-summary {
     display: grid;
-    grid-template-columns: 160px 1fr;
-    gap: 20px;
+    grid-template-columns: 170px 1fr;
+    gap: 24px;
     align-items: center;
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(20, 30, 60, 0.5));
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 20px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    border-radius: 28px;
+    padding: 24px 26px;
     margin-bottom: 16px;
     position: relative;
+    box-shadow: var(--glass-shadow);
+    overflow: hidden;
 }
 .nutri-summary::before {
     content: '';
@@ -2320,12 +2493,21 @@ input, select, textarea {
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.5), transparent 50%, rgba(56, 189, 248, 0.5));
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.55), transparent 45%, rgba(236, 72, 153, 0.4));
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
-    opacity: 0.5;
+    opacity: 0.85;
+}
+.nutri-summary::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 45%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent);
+    pointer-events: none;
+    border-radius: inherit;
 }
 
 @media (max-width: 560px) {
@@ -2385,80 +2567,130 @@ input, select, textarea {
 .nutri-macros {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 14px;
 }
 .nutri-macro {
     display: grid;
-    grid-template-columns: 70px 60px 1fr;
+    grid-template-columns: 78px 1fr 70px;
     align-items: center;
-    gap: 10px;
+    gap: 14px;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(192, 132, 252, 0.10);
+    border-radius: 999px;
+    transition: all 0.25s ease;
+}
+.nutri-macro:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(192, 132, 252, 0.22);
 }
 .nm-label {
     font-family: var(--font-display);
-    font-size: 10px;
-    color: var(--text-muted);
-    letter-spacing: 1.5px;
+    font-size: 11px;
+    color: var(--text);
+    letter-spacing: 1.6px;
+    font-weight: 700;
 }
 .nm-val {
     font-family: var(--font-display);
-    font-size: 14px;
+    font-size: 16px;
     color: var(--text);
-    font-weight: 700;
+    font-weight: 800;
     text-align: right;
+    letter-spacing: 0.5px;
 }
 .nm-bar {
-    height: 6px;
-    background: rgba(5,8,17,0.7);
+    height: 8px;
+    background: rgba(10, 4, 30, 0.6);
     border-radius: 99px;
     overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 .nm-bar-fill {
     height: 100%;
     border-radius: 99px;
-    transition: width 0.6s ease;
+    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
 }
-.nm-bar-fill.p { background: linear-gradient(90deg, #b91c1c, var(--neon-red)); box-shadow: 0 0 6px var(--neon-red); }
-.nm-bar-fill.c { background: linear-gradient(90deg, #c2410c, #fb923c); box-shadow: 0 0 6px #fb923c; }
-.nm-bar-fill.f { background: linear-gradient(90deg, #a21caf, var(--neon-pink)); box-shadow: 0 0 6px var(--neon-pink); }
+.nm-bar-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 60%);
+    border-radius: inherit;
+}
+.nm-bar-fill.p { background: linear-gradient(90deg, #ef4444, #fb7185); box-shadow: 0 0 12px rgba(248, 113, 113, 0.5); }
+.nm-bar-fill.c { background: linear-gradient(90deg, #f59e0b, #fbbf24); box-shadow: 0 0 12px rgba(251, 191, 36, 0.5); }
+.nm-bar-fill.f { background: linear-gradient(90deg, #a855f7, #ec4899); box-shadow: 0 0 12px rgba(236, 72, 153, 0.5); }
 
 /* ========== Simplified Nutrition Logger ========== */
-.nutri-logger { padding: 22px; }
+.nutri-logger {
+    padding: 24px;
+    border-radius: 26px;
+}
 
 .meal-pills {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 16px;
+    gap: 10px;
+    margin-bottom: 18px;
 }
 
 .meal-pill {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 12px 8px;
-    background: rgba(20, 30, 60, 0.4);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    gap: 6px;
+    padding: 14px 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(192, 132, 252, 0.14);
+    border-radius: 22px;
     color: var(--text-muted);
     font-family: var(--font-display);
     font-size: 11px;
     letter-spacing: 1px;
     font-weight: 700;
     text-transform: uppercase;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
 }
-.meal-pill span:first-child { font-size: 20px; }
+.meal-pill::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
+    pointer-events: none;
+    border-radius: inherit;
+}
+.meal-pill span:first-child {
+    font-size: 28px;
+    filter: drop-shadow(0 4px 8px rgba(168, 85, 247, 0.3));
+    transition: transform 0.3s ease;
+}
 .meal-pill:hover {
-    background: rgba(168, 85, 247, 0.1);
-    border-color: var(--border-bright);
+    background: rgba(192, 132, 252, 0.10);
+    border-color: rgba(192, 132, 252, 0.40);
+    transform: translateY(-2px);
+}
+.meal-pill:hover span:first-child {
+    transform: scale(1.15) rotate(-6deg);
 }
 .meal-pill.active {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(56, 189, 248, 0.15));
-    border-color: var(--neon-purple);
-    color: var(--neon-cyan);
-    box-shadow: 0 0 16px rgba(168, 85, 247, 0.3);
-    text-shadow: 0 0 8px var(--neon-cyan);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(236, 72, 153, 0.20));
+    border-color: rgba(192, 132, 252, 0.7);
+    color: #fff;
+    box-shadow:
+        0 8px 28px rgba(168, 85, 247, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+}
+.meal-pill.active span:first-child {
+    filter: drop-shadow(0 0 12px rgba(192, 132, 252, 0.9));
 }
 
 .food-input-row {
@@ -2468,18 +2700,20 @@ input, select, textarea {
 }
 .food-input {
     flex: 1;
-    padding: 14px 18px;
-    background: rgba(5, 8, 17, 0.6);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    padding: 15px 22px;
+    background: rgba(10, 4, 30, 0.5);
+    border: 1px solid rgba(192, 132, 252, 0.18);
+    border-radius: 999px;
     color: var(--text);
     font-size: 15px;
-    transition: all 0.2s;
+    transition: all 0.25s;
+    backdrop-filter: blur(8px);
 }
+.food-input::placeholder { color: var(--text-faint); }
 .food-input:focus {
     outline: none;
-    border-color: var(--neon-purple);
-    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15), 0 0 24px rgba(168, 85, 247, 0.2);
+    border-color: rgba(192, 132, 252, 0.6);
+    box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.12), 0 0 28px rgba(168, 85, 247, 0.25);
 }
 
 .capture-btn {
@@ -2488,24 +2722,25 @@ input, select, textarea {
     align-items: center;
     justify-content: center;
     gap: 2px;
-    min-width: 88px;
-    padding: 8px 16px;
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.18), rgba(168, 85, 247, 0.12));
+    min-width: 92px;
+    padding: 8px 18px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.22), rgba(168, 85, 247, 0.15));
     border: 1px solid rgba(236, 72, 153, 0.5);
-    border-radius: var(--radius);
-    color: var(--neon-pink);
+    border-radius: 999px;
+    color: #fff;
     cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 0 14px rgba(236, 72, 153, 0.2);
+    transition: all 0.25s;
+    box-shadow: 0 6px 20px rgba(236, 72, 153, 0.25);
+    backdrop-filter: blur(10px);
 }
 .capture-btn:hover {
-    box-shadow: 0 0 24px rgba(236, 72, 153, 0.5);
-    transform: translateY(-1px);
+    box-shadow: 0 10px 30px rgba(236, 72, 153, 0.5);
+    transform: translateY(-2px);
     border-color: var(--neon-pink);
 }
 .capture-icon {
     font-size: 22px;
-    filter: drop-shadow(0 0 6px var(--neon-pink));
+    filter: drop-shadow(0 0 8px var(--neon-pink));
 }
 .capture-label {
     font-family: var(--font-display);
@@ -2535,62 +2770,213 @@ input, select, textarea {
 
 .food-details {
     width: 100%;
-    padding: 12px 16px;
-    background: rgba(5, 8, 17, 0.6);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    padding: 14px 18px;
+    background: rgba(10, 4, 30, 0.5);
+    border: 1px solid rgba(192, 132, 252, 0.18);
+    border-radius: 18px;
     color: var(--text);
     font-family: inherit;
     font-size: 14px;
     resize: vertical;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(8px);
+    transition: all 0.25s;
 }
+.food-details::placeholder { color: var(--text-faint); }
 .food-details:focus {
     outline: none;
-    border-color: var(--neon-purple);
-    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+    border-color: rgba(192, 132, 252, 0.55);
+    box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.12), 0 0 24px rgba(168, 85, 247, 0.2);
 }
 
 .btn-ai-large {
     width: 100%;
-    padding: 16px;
-    background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple), var(--neon-blue));
-    background-size: 200% 100%;
+    padding: 18px 22px;
+    background: linear-gradient(135deg, #ec4899 0%, #a855f7 35%, #6366f1 70%, #38bdf8 100%);
+    background-size: 300% 100%;
     background-position: 0% 50%;
     color: #fff;
-    border: 1px solid rgba(236, 72, 153, 0.6);
-    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
     font-family: var(--font-display);
     font-size: 14px;
     font-weight: 800;
-    letter-spacing: 2px;
+    letter-spacing: 2.5px;
     text-transform: uppercase;
     cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 0 24px rgba(236, 72, 153, 0.35);
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow:
+        0 10px 36px rgba(168, 85, 247, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        inset 0 -8px 24px rgba(0, 0, 0, 0.25);
     margin-bottom: 8px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    animation: btnGradient 6s ease-in-out infinite alternate;
+}
+@keyframes btnGradient {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+.btn-ai-large::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+    transform: skewX(-20deg);
+    animation: btnSheen 4s ease-in-out infinite;
+}
+@keyframes btnSheen {
+    0%, 100% { left: -100%; }
+    50%      { left: 130%; }
 }
 .btn-ai-large:hover {
-    background-position: 100% 50%;
-    box-shadow: 0 0 40px rgba(168, 85, 247, 0.7);
-    transform: translateY(-1px);
+    transform: translateY(-3px) scale(1.01);
+    box-shadow:
+        0 14px 46px rgba(168, 85, 247, 0.65),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
+.btn-ai-large:active { transform: translateY(-1px) scale(0.99); }
 .btn-ai-large:disabled {
-    opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+    animation: btnGradient 2s linear infinite;
+}
+.btn-ai-large:disabled::before { display: none; }
+
+/* Multi-ring AI spinner (used inside btn-ai-large when loading) */
+.ai-spinner {
+    position: relative;
+    width: 26px;
+    height: 26px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.ai-spinner::before,
+.ai-spinner::after,
+.ai-spinner i {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    box-sizing: border-box;
+}
+.ai-spinner::before {
+    border-top-color: #fff;
+    border-right-color: rgba(255, 255, 255, 0.6);
+    animation: spinFast 0.9s linear infinite;
+}
+.ai-spinner::after {
+    inset: 4px;
+    border-bottom-color: #f0abfc;
+    border-left-color: rgba(240, 171, 252, 0.5);
+    animation: spinFast 1.4s linear infinite reverse;
+}
+.ai-spinner i {
+    inset: 8px;
+    border-top-color: #67e8f9;
+    border-left-color: rgba(103, 232, 249, 0.5);
+    animation: spinFast 0.7s linear infinite;
+    display: block;
+}
+@keyframes spinFast {
+    to { transform: rotate(360deg); }
+}
+
+/* Cooking overlay — covers the AI button area during processing */
+.ai-cooking {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 8px 0 14px;
+    padding: 18px 22px;
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.18), rgba(236, 72, 153, 0.12));
+    border: 1px solid rgba(192, 132, 252, 0.35);
+    border-radius: 22px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 8px 30px rgba(168, 85, 247, 0.25);
+}
+.ai-cooking.show { display: flex; animation: fadeIn 0.3s ease; }
+.ai-cooking-orb {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+}
+.ai-cooking-orb::before,
+.ai-cooking-orb::after,
+.ai-cooking-orb i {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2.5px solid transparent;
+}
+.ai-cooking-orb::before {
+    border-top-color: #c084fc;
+    border-right-color: rgba(192, 132, 252, 0.4);
+    animation: spinFast 1.2s linear infinite;
+    box-shadow: 0 0 16px rgba(192, 132, 252, 0.6);
+}
+.ai-cooking-orb::after {
+    inset: 8px;
+    border-bottom-color: #f0abfc;
+    border-left-color: rgba(240, 171, 252, 0.4);
+    animation: spinFast 1.8s linear infinite reverse;
+}
+.ai-cooking-orb i {
+    inset: 16px;
+    display: block;
+    border-top-color: #67e8f9;
+    border-left-color: rgba(103, 232, 249, 0.4);
+    animation: spinFast 0.9s linear infinite;
+}
+.ai-cooking-text {
+    flex: 1;
+    font-family: var(--font-display);
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--text);
+    text-transform: uppercase;
+}
+.ai-cooking-text strong {
+    display: block;
+    font-size: 15px;
+    color: #fff;
+    text-shadow: 0 0 12px rgba(192, 132, 252, 0.8);
+    margin-bottom: 4px;
+    letter-spacing: 3px;
+}
+.ai-cooking-text small {
+    display: block;
+    color: var(--text-muted);
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    margin-top: 2px;
+    text-transform: none;
+    font-family: var(--font-body);
 }
 
 /* ========== AI Result Panel (replaces old ai-box) ========== */
 .ai-result-panel {
     display: none;
     margin-top: 16px;
-    padding: 18px;
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(168, 85, 247, 0.05));
-    border: 1px solid rgba(236, 72, 153, 0.4);
-    border-radius: var(--radius);
+    padding: 22px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.10));
+    border: 1px solid rgba(236, 72, 153, 0.45);
+    border-radius: 24px;
     position: relative;
     overflow: hidden;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 12px 36px rgba(168, 85, 247, 0.18);
 }
 .ai-result-panel.show { display: block; animation: fadeIn 0.4s ease; }
 .ai-result-panel::before {
@@ -2634,24 +3020,38 @@ input, select, textarea {
 .ai-macro-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin: 12px 0;
+    gap: 12px;
+    margin: 14px 0;
 }
 @media (max-width: 500px) {
     .ai-macro-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 .ai-macro-cell {
-    padding: 12px 10px;
-    background: rgba(5, 8, 17, 0.5);
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    padding: 16px 12px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(10, 4, 30, 0.3));
+    border: 1px solid rgba(192, 132, 252, 0.18);
+    border-radius: 20px;
     text-align: center;
+    backdrop-filter: blur(8px);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s ease;
 }
-.ai-macro-cell.cal  { border-color: rgba(168, 85, 247, 0.4); }
-.ai-macro-cell.pro  { border-color: rgba(248, 113, 113, 0.4); }
-.ai-macro-cell.carb { border-color: rgba(251, 146, 60, 0.4); }
-.ai-macro-cell.fat  { border-color: rgba(236, 72, 153, 0.4); }
+.ai-macro-cell::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 45%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
+    pointer-events: none;
+    border-radius: inherit;
+}
+.ai-macro-cell:hover { transform: translateY(-2px); }
+.ai-macro-cell.cal  { border-color: rgba(168, 85, 247, 0.45); box-shadow: 0 6px 20px rgba(168, 85, 247, 0.18); }
+.ai-macro-cell.pro  { border-color: rgba(248, 113, 113, 0.45); box-shadow: 0 6px 20px rgba(248, 113, 113, 0.18); }
+.ai-macro-cell.carb { border-color: rgba(251, 146, 60, 0.45);  box-shadow: 0 6px 20px rgba(251, 146, 60, 0.18); }
+.ai-macro-cell.fat  { border-color: rgba(236, 72, 153, 0.45); box-shadow: 0 6px 20px rgba(236, 72, 153, 0.18); }
 
 .ai-macro-cell-label {
     font-family: var(--font-display);
@@ -2670,6 +3070,7 @@ input, select, textarea {
 .ai-macro-cell.pro  .ai-macro-cell-value { color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); }
 .ai-macro-cell.carb .ai-macro-cell-value { color: #fb923c; text-shadow: 0 0 10px #fb923c; }
 .ai-macro-cell.fat  .ai-macro-cell-value { color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink); }
+
 .ai-macro-cell-unit {
     font-size: 9px;
     color: var(--text-faint);
@@ -2686,6 +3087,846 @@ input, select, textarea {
     padding-top: 12px;
     border-top: 1px dashed var(--border);
 }
+
+/* ========== Body — Dual Gauges ========== */
+.body-hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+@media (max-width: 700px) {
+    .body-hero { grid-template-columns: 1fr; }
+}
+
+.gauge-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    border-radius: 24px;
+    padding: 20px 18px 16px;
+    box-shadow: var(--glass-shadow);
+    position: relative;
+    overflow: hidden;
+}
+.gauge-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 45%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent);
+    pointer-events: none;
+}
+.gauge-label {
+    font-family: var(--font-display);
+    font-size: 11px;
+    color: var(--neon-violet);
+    letter-spacing: 2.5px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 6px;
+    text-shadow: 0 0 10px rgba(192, 132, 252, 0.4);
+}
+.gauge-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 200 / 130;
+    max-width: 280px;
+    margin: 0 auto;
+}
+.gauge-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+#bmiNeedle, #bfNeedle {
+    transition: transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-box: view-box;
+    transform-origin: 100px 110px;
+}
+.gauge-readout {
+    position: absolute;
+    left: 50%;
+    bottom: 4px;
+    transform: translateX(-50%);
+    text-align: center;
+}
+.gauge-num {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    text-shadow: 0 0 18px rgba(192, 132, 252, 0.7);
+}
+.gauge-cat {
+    font-family: var(--font-display);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    margin-top: 3px;
+}
+.gauge-scale {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-family: var(--font-display);
+    font-size: 9.5px;
+    color: var(--text-faint);
+    letter-spacing: 0.8px;
+}
+
+/* Composition strip */
+.comp-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+@media (max-width: 700px) {
+    .comp-strip { grid-template-columns: repeat(2, 1fr); }
+}
+.comp-cell {
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(192, 132, 252, 0.18);
+    border-radius: 16px;
+    backdrop-filter: blur(8px);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.comp-cell::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent);
+    pointer-events: none;
+}
+.comp-label {
+    font-family: var(--font-display);
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 1.3px;
+    margin-bottom: 4px;
+}
+.comp-val {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    text-shadow: 0 0 12px rgba(192, 132, 252, 0.6);
+}
+.comp-unit {
+    font-family: var(--font-display);
+    font-size: 9px;
+    color: var(--text-faint);
+    margin-top: 4px;
+    letter-spacing: 1px;
+}
+
+/* Body calculator inputs */
+.body-calc-card { padding: 22px; border-radius: 24px; }
+.body-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 16px;
+    margin: 16px 0;
+}
+@media (max-width: 600px) {
+    .body-grid { grid-template-columns: 1fr; }
+}
+.bg-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.bg-label {
+    font-family: var(--font-display);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    padding-left: 4px;
+}
+.bg-input {
+    width: 100%;
+    padding: 12px 18px;
+    background: rgba(10, 4, 30, 0.5);
+    border: 1px solid rgba(192, 132, 252, 0.18);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 15px;
+    transition: all 0.25s;
+    backdrop-filter: blur(8px);
+}
+.bg-input::placeholder { color: var(--text-faint); }
+.bg-input:focus {
+    outline: none;
+    border-color: rgba(192, 132, 252, 0.55);
+    box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.12), 0 0 24px rgba(168, 85, 247, 0.2);
+}
+.sex-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.sex-btn {
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(192, 132, 252, 0.18);
+    border-radius: 999px;
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.25s;
+}
+.sex-btn:hover {
+    background: rgba(192, 132, 252, 0.10);
+    color: #fff;
+}
+.sex-btn.active {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.30), rgba(168, 85, 247, 0.25));
+    border-color: rgba(34, 211, 238, 0.6);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(34, 211, 238, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Body Measurements map */
+.body-map-wrap {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+@media (max-width: 720px) {
+    .body-map-wrap { grid-template-columns: 1fr; }
+}
+.body-map-svg {
+    width: 100%;
+    max-width: 260px;
+    height: auto;
+    justify-self: center;
+}
+.bm-dot { cursor: pointer; transition: transform 0.2s; }
+.bm-dot:hover { transform: scale(1.06); transform-origin: center; }
+.bm-dot-circle {
+    fill: rgba(168, 85, 247, 0.30);
+    stroke: #c084fc;
+    stroke-width: 2;
+    filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.7));
+    animation: bmDotPulse 2.4s ease-in-out infinite;
+}
+@keyframes bmDotPulse {
+    0%, 100% { r: 6; opacity: 1; }
+    50%      { r: 7.2; opacity: 0.7; }
+}
+.bm-dot.has-value .bm-dot-circle {
+    fill: rgba(34, 211, 238, 0.35);
+    stroke: #22d3ee;
+    filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.8));
+}
+.bm-dot-line {
+    stroke: rgba(192, 132, 252, 0.35);
+    stroke-width: 0.8;
+    stroke-dasharray: 2 3;
+}
+.bm-dot-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    fill: var(--text-muted);
+    letter-spacing: 1px;
+}
+.bm-text-left { text-anchor: start; }
+.bm-dot.has-value .bm-dot-text { fill: #22d3ee; }
+
+.bm-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.bm-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(192, 132, 252, 0.14);
+    border-radius: 14px;
+    backdrop-filter: blur(8px);
+    transition: all 0.25s;
+}
+.bm-list-item:hover {
+    background: rgba(192, 132, 252, 0.08);
+    border-color: rgba(192, 132, 252, 0.3);
+}
+.bm-li-name {
+    font-family: var(--font-display);
+    font-size: 11px;
+    color: var(--text);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+.bm-li-val {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: #22d3ee;
+    font-size: 16px;
+    text-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+}
+.bm-li-val .unit { font-size: 10px; color: var(--text-muted); margin-left: 4px; text-shadow: none; }
+.bm-li-empty { color: var(--text-faint); font-style: italic; font-family: var(--font-body); font-size: 12px; letter-spacing: normal; text-transform: none; }
+
+/* Measurement entry modal */
+.bm-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.bm-modal[hidden] { display: none !important; }
+.bm-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 2, 18, 0.65);
+    backdrop-filter: blur(14px);
+}
+.bm-modal-card {
+    position: relative;
+    width: min(90%, 360px);
+    padding: 26px 24px 22px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid rgba(192, 132, 252, 0.4);
+    border-radius: 26px;
+    box-shadow: 0 24px 70px rgba(20, 0, 50, 0.55);
+    animation: bmModalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes bmModalIn {
+    from { transform: translateY(20px) scale(0.95); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+.bm-modal-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #fff;
+    text-shadow: 0 0 14px rgba(192, 132, 252, 0.6);
+    margin-bottom: 4px;
+}
+.bm-modal-sub {
+    font-family: var(--font-display);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.4px;
+    margin-bottom: 14px;
+}
+.bm-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+/* ========== Recovery — AI Score ========== */
+.recovery-hero {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 24px;
+    align-items: center;
+    padding: 28px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    border-radius: 28px;
+    box-shadow: var(--glass-shadow), 0 0 60px rgba(168, 85, 247, 0.15);
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+}
+.recovery-hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 45%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent);
+    pointer-events: none;
+}
+@media (max-width: 700px) {
+    .recovery-hero { grid-template-columns: 1fr; padding: 22px; }
+    .recovery-orb-wrap { margin: 0 auto; }
+}
+
+.recovery-orb-wrap {
+    position: relative;
+    width: 240px;
+    height: 240px;
+}
+.recovery-orb-svg { width: 100%; height: 100%; }
+.recovery-orb-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+.recovery-score {
+    font-family: var(--font-display);
+    font-size: 64px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    text-shadow: 0 0 24px var(--rec-glow, rgba(192, 132, 252, 0.8));
+    transition: text-shadow 0.6s;
+}
+.recovery-score-max {
+    font-family: var(--font-display);
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    margin-top: 2px;
+}
+.recovery-status {
+    font-family: var(--font-display);
+    font-size: 11px;
+    color: var(--neon-violet);
+    letter-spacing: 2.5px;
+    margin-top: 8px;
+    text-shadow: 0 0 12px var(--rec-glow, rgba(192, 132, 252, 0.8));
+}
+.recovery-orb-ring {
+    transition: stroke-dashoffset 1.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.recovery-orb-pulse {
+    transform-origin: center;
+    animation: recPulse 3s ease-in-out infinite;
+}
+@keyframes recPulse {
+    0%, 100% { transform: scale(1);   opacity: 0.35; }
+    50%      { transform: scale(1.08); opacity: 0.7; }
+}
+
+.recovery-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.recovery-summary-title {
+    font-family: var(--font-display);
+    font-size: 11px;
+    color: var(--neon-violet);
+    letter-spacing: 2.5px;
+    text-shadow: 0 0 8px rgba(192, 132, 252, 0.5);
+}
+.recovery-summary-text {
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+}
+.recovery-tip {
+    margin-top: 6px;
+    padding: 12px 16px;
+    background: rgba(192, 132, 252, 0.10);
+    border: 1px solid rgba(192, 132, 252, 0.25);
+    border-radius: 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+.recovery-tip strong { color: var(--neon-violet); }
+
+/* Recovery inputs */
+.rec-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 16px;
+    margin: 14px 0;
+}
+@media (max-width: 600px) {
+    .rec-grid { grid-template-columns: 1fr; }
+}
+
+.rec-slider-row {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(192, 132, 252, 0.14);
+    border-radius: 18px;
+    padding: 14px 18px;
+    backdrop-filter: blur(8px);
+}
+.rec-slider-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+.rec-slider-label {
+    font-family: var(--font-display);
+    font-size: 10.5px;
+    color: var(--text-muted);
+    letter-spacing: 1.3px;
+}
+.rec-slider-val {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(192, 132, 252, 0.6);
+}
+.rec-slider {
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    height: 6px;
+    background: linear-gradient(90deg, rgba(34, 211, 238, 0.5), rgba(168, 85, 247, 0.5), rgba(236, 72, 153, 0.5));
+    border-radius: 99px;
+    outline: none;
+}
+.rec-slider::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff, #c084fc);
+    border: 2px solid #fff;
+    box-shadow: 0 0 14px rgba(192, 132, 252, 0.8), 0 0 0 4px rgba(168, 85, 247, 0.15);
+    cursor: pointer;
+}
+.rec-slider::-moz-range-thumb {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff, #c084fc);
+    border: 2px solid #fff;
+    box-shadow: 0 0 14px rgba(192, 132, 252, 0.8);
+    cursor: pointer;
+}
+
+.rec-pills {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+}
+.rec-pill {
+    padding: 10px 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(192, 132, 252, 0.14);
+    border-radius: 14px;
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: center;
+}
+.rec-pill .rec-pill-icon { display: block; font-size: 18px; margin-bottom: 2px; }
+.rec-pill:hover {
+    background: rgba(192, 132, 252, 0.10);
+    border-color: rgba(192, 132, 252, 0.30);
+}
+.rec-pill.active {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.30), rgba(236, 72, 153, 0.18));
+    border-color: rgba(192, 132, 252, 0.6);
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(168, 85, 247, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.rec-factors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+.rec-factor {
+    padding: 6px 12px;
+    background: rgba(192, 132, 252, 0.10);
+    border: 1px solid rgba(192, 132, 252, 0.22);
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--text);
+}
+.rec-factor.good { background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.4); color: var(--neon-green); }
+.rec-factor.bad  { background: rgba(248, 113, 113, 0.12); border-color: rgba(248, 113, 113, 0.4); color: var(--neon-red); }
+
+.rec-history {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+@media (max-width: 600px) {
+    .rec-history { grid-template-columns: repeat(7, 1fr); gap: 4px; }
+}
+.rec-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 4px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(192, 132, 252, 0.14);
+    border-radius: 14px;
+}
+.rec-bar-track {
+    width: 14px;
+    height: 90px;
+    background: rgba(10, 4, 30, 0.6);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+}
+.rec-bar-fill {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(180deg, #ec4899, #a855f7, #22d3ee);
+    box-shadow: 0 0 10px rgba(192, 132, 252, 0.6);
+    transition: height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-radius: inherit;
+}
+.rec-bar-score {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 8px rgba(192, 132, 252, 0.5);
+}
+.rec-bar-day {
+    font-family: var(--font-display);
+    font-size: 9px;
+    color: var(--text-faint);
+    letter-spacing: 0.8px;
+}
+
+/* ========== Training — Quick Logger ========== */
+.train-snapshot {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+@media (max-width: 700px) {
+    .train-snapshot { grid-template-columns: repeat(2, 1fr); }
+}
+
+.train-stat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    border-radius: 20px;
+    box-shadow: var(--glass-shadow);
+    position: relative;
+    overflow: hidden;
+}
+.train-stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 45%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent);
+    pointer-events: none;
+}
+.ts-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(236, 72, 153, 0.15));
+    border: 1px solid rgba(192, 132, 252, 0.32);
+    filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.5));
+}
+.ts-body { display: flex; flex-direction: column; }
+.ts-num {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    text-shadow: 0 0 14px rgba(192, 132, 252, 0.6);
+}
+.ts-label {
+    font-family: var(--font-display);
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    margin-top: 4px;
+}
+
+.training-logger { padding: 24px; border-radius: 26px; }
+
+.sport-pills {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+@media (max-width: 700px) {
+    .sport-pills { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 480px) {
+    .sport-pills { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+}
+
+.sport-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 6px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(192, 132, 252, 0.14);
+    border-radius: 20px;
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+.sport-pill::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent);
+    pointer-events: none;
+    border-radius: inherit;
+}
+.sport-pill span:first-child {
+    font-size: 24px;
+    filter: drop-shadow(0 4px 8px rgba(168, 85, 247, 0.3));
+    transition: transform 0.3s ease;
+}
+.sport-pill:hover {
+    background: rgba(192, 132, 252, 0.10);
+    border-color: rgba(192, 132, 252, 0.40);
+    transform: translateY(-2px);
+}
+.sport-pill:hover span:first-child { transform: scale(1.15) rotate(-6deg); }
+.sport-pill.active {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.30), rgba(168, 85, 247, 0.25));
+    border-color: rgba(34, 211, 238, 0.6);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(34, 211, 238, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+.sport-pill.active span:first-child { filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.9)); }
+
+.train-examples {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 16px;
+}
+.te-label {
+    font-family: var(--font-display);
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-right: 4px;
+}
+.te-chip {
+    padding: 6px 14px;
+    background: rgba(192, 132, 252, 0.08);
+    border: 1px solid rgba(192, 132, 252, 0.22);
+    border-radius: 999px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: var(--font-display);
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.te-chip:hover {
+    background: rgba(192, 132, 252, 0.20);
+    border-color: rgba(192, 132, 252, 0.5);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.train-result-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 14px 0;
+}
+@media (max-width: 560px) {
+    .train-result-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ========== Workout Plan Designer — collapsible card ========== */
+.workout-designer-card { padding: 0; overflow: hidden; }
+.workout-designer-card > .designer-grid,
+.workout-designer-card > .info-box,
+.workout-designer-card > .workout-plan { margin-left: 22px; margin-right: 22px; }
+.workout-designer-card > .info-box { margin-top: 12px; }
+.workout-designer-card > .workout-plan { margin-bottom: 22px; }
+
+.designer-summary {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 22px;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--font-display);
+    transition: background 0.25s;
+}
+.designer-summary::-webkit-details-marker { display: none; }
+.designer-summary:hover { background: rgba(192, 132, 252, 0.06); }
+.ds-icon {
+    font-size: 22px;
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.22), rgba(168, 85, 247, 0.18));
+    border: 1px solid rgba(192, 132, 252, 0.3);
+    flex-shrink: 0;
+}
+.ds-title {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(192, 132, 252, 0.4);
+}
+.ds-sub {
+    color: var(--text-muted);
+    font-size: 10px;
+    letter-spacing: 1px;
+    flex: 1;
+    margin-left: 4px;
+}
+.ds-chevron {
+    color: var(--neon-violet);
+    font-size: 18px;
+    transition: transform 0.3s ease;
+}
+.workout-designer-card[open] .ds-chevron { transform: rotate(180deg); }
+.workout-designer-card[open] .designer-summary { border-bottom: 1px solid rgba(192, 132, 252, 0.18); }
 
 /* ========== Workout Plan Designer ========== */
 .designer-grid {
@@ -2958,8 +4199,24 @@ input, select, textarea {
                         </defs>
 
                         <!-- Decorative concentric rings -->
-                        <circle cx="600" cy="400" r="220" fill="none" stroke="rgba(168, 85, 247, 0.08)" stroke-width="1" stroke-dasharray="3 6"/>
-                        <circle cx="600" cy="400" r="320" fill="none" stroke="rgba(56, 189, 248, 0.06)" stroke-width="1" stroke-dasharray="4 8"/>
+                        <circle cx="600" cy="400" r="160" fill="none" stroke="rgba(192, 132, 252, 0.12)" stroke-width="1" stroke-dasharray="2 4">
+                            <animateTransform attributeName="transform" type="rotate" from="0 600 400" to="360 600 400" dur="60s" repeatCount="indefinite"/>
+                        </circle>
+                        <circle cx="600" cy="400" r="220" fill="none" stroke="rgba(168, 85, 247, 0.10)" stroke-width="1" stroke-dasharray="3 6"/>
+                        <circle cx="600" cy="400" r="320" fill="none" stroke="rgba(56, 189, 248, 0.08)" stroke-width="1" stroke-dasharray="4 8">
+                            <animateTransform attributeName="transform" type="rotate" from="360 600 400" to="0 600 400" dur="80s" repeatCount="indefinite"/>
+                        </circle>
+                        <circle cx="600" cy="400" r="400" fill="none" stroke="rgba(192, 132, 252, 0.06)" stroke-width="0.8" stroke-dasharray="1 10"/>
+
+                        <!-- Synapse cross-connections (node ↔ node) -->
+                        <path class="net-synapse" d="M 200 130 Q 100 270 100 410"/>
+                        <path class="net-synapse" d="M 1000 130 Q 1100 270 1100 410"/>
+                        <path class="net-synapse" d="M 100 410 Q 170 555 240 700"/>
+                        <path class="net-synapse" d="M 1100 410 Q 1030 555 960 700"/>
+                        <path class="net-synapse" d="M 200 130 Q 600 80 1000 130"/>
+                        <path class="net-synapse" d="M 240 700 Q 600 760 960 700"/>
+                        <path class="net-synapse" d="M 200 130 Q 600 400 960 700"/>
+                        <path class="net-synapse" d="M 1000 130 Q 600 400 240 700"/>
 
                         <!-- Energy connection lines (body center → each node) -->
                         <path id="netPath-hp"  class="net-line hp"  d="M 600 400 Q 440 290 200 130" stroke="url(#lineGradHp)"/>
@@ -2969,26 +4226,71 @@ input, select, textarea {
                         <path id="netPath-mp"  class="net-line mp"  d="M 600 400 Q 420 540 240 700" stroke="url(#lineGradMp)"/>
                         <path id="netPath-int" class="net-line int" d="M 600 400 Q 780 540 960 700" stroke="url(#lineGradInt)"/>
 
+                        <!-- Hidden ring synapse path for orbiting particle -->
+                        <path id="netPath-ring" d="M 600 240 A 160 160 0 1 1 599.9 240" fill="none" stroke="none"/>
+
                         <!-- Traveling energy pulses along each line -->
                         <circle r="3" fill="#22d3ee" filter="drop-shadow(0 0 6px #22d3ee)">
                             <animateMotion dur="3.2s" repeatCount="indefinite"><mpath href="#netPath-hp"/></animateMotion>
                         </circle>
+                        <circle r="2" fill="#22d3ee" opacity="0.6">
+                            <animateMotion dur="3.2s" begin="1.6s" repeatCount="indefinite"><mpath href="#netPath-hp"/></animateMotion>
+                        </circle>
                         <circle r="3" fill="#f87171" filter="drop-shadow(0 0 6px #f87171)">
                             <animateMotion dur="3.6s" repeatCount="indefinite" begin="0.4s"><mpath href="#netPath-str"/></animateMotion>
+                        </circle>
+                        <circle r="2" fill="#f87171" opacity="0.6">
+                            <animateMotion dur="3.6s" begin="2.2s" repeatCount="indefinite"><mpath href="#netPath-str"/></animateMotion>
                         </circle>
                         <circle r="3" fill="#34d399" filter="drop-shadow(0 0 6px #34d399)">
                             <animateMotion dur="4s" repeatCount="indefinite" begin="0.8s"><mpath href="#netPath-sta"/></animateMotion>
                         </circle>
+                        <circle r="2" fill="#34d399" opacity="0.6">
+                            <animateMotion dur="4s" begin="2.8s" repeatCount="indefinite"><mpath href="#netPath-sta"/></animateMotion>
+                        </circle>
                         <circle r="3" fill="#fb923c" filter="drop-shadow(0 0 6px #fb923c)">
                             <animateMotion dur="3.8s" repeatCount="indefinite" begin="1.2s"><mpath href="#netPath-vit"/></animateMotion>
+                        </circle>
+                        <circle r="2" fill="#fb923c" opacity="0.6">
+                            <animateMotion dur="3.8s" begin="3s" repeatCount="indefinite"><mpath href="#netPath-vit"/></animateMotion>
                         </circle>
                         <circle r="3" fill="#a855f7" filter="drop-shadow(0 0 6px #a855f7)">
                             <animateMotion dur="4.2s" repeatCount="indefinite" begin="1.6s"><mpath href="#netPath-mp"/></animateMotion>
                         </circle>
+                        <circle r="2" fill="#a855f7" opacity="0.6">
+                            <animateMotion dur="4.2s" begin="3.4s" repeatCount="indefinite"><mpath href="#netPath-mp"/></animateMotion>
+                        </circle>
                         <circle r="3" fill="#ec4899" filter="drop-shadow(0 0 6px #ec4899)">
                             <animateMotion dur="3.4s" repeatCount="indefinite" begin="2s"><mpath href="#netPath-int"/></animateMotion>
                         </circle>
+                        <circle r="2" fill="#ec4899" opacity="0.6">
+                            <animateMotion dur="3.4s" begin="3.6s" repeatCount="indefinite"><mpath href="#netPath-int"/></animateMotion>
+                        </circle>
+
+                        <!-- Orbiting data packet on inner ring -->
+                        <circle r="2.5" fill="#c084fc" filter="drop-shadow(0 0 8px #c084fc)">
+                            <animateMotion dur="10s" repeatCount="indefinite"><mpath href="#netPath-ring"/></animateMotion>
+                        </circle>
+                        <circle r="2" fill="#22d3ee" filter="drop-shadow(0 0 6px #22d3ee)" opacity="0.7">
+                            <animateMotion dur="10s" begin="5s" repeatCount="indefinite"><mpath href="#netPath-ring"/></animateMotion>
+                        </circle>
                     </svg>
+
+                    <!-- Ambient floating particles -->
+                    <div class="bio-particles" aria-hidden="true">
+                        <span class="bio-particle"   style="left: 12%; top: 32%; --dur: 7s;  --delay: 0s;"></span>
+                        <span class="bio-particle c" style="left: 28%; top: 18%; --dur: 9s;  --delay: 1.2s;"></span>
+                        <span class="bio-particle s" style="left: 42%; top: 28%; --dur: 6s;  --delay: 0.8s;"></span>
+                        <span class="bio-particle p" style="left: 64%; top: 22%; --dur: 8s;  --delay: 2s;"></span>
+                        <span class="bio-particle g" style="left: 82%; top: 38%; --dur: 11s; --delay: 0.5s;"></span>
+                        <span class="bio-particle s" style="left: 8%;  top: 62%; --dur: 8s;  --delay: 1.4s;"></span>
+                        <span class="bio-particle"   style="left: 26%; top: 72%; --dur: 10s; --delay: 3s;"></span>
+                        <span class="bio-particle c" style="left: 56%; top: 80%; --dur: 7s;  --delay: 1s;"></span>
+                        <span class="bio-particle p" style="left: 78%; top: 68%; --dur: 9s;  --delay: 2.2s;"></span>
+                        <span class="bio-particle s" style="left: 92%; top: 56%; --dur: 6s;  --delay: 0.3s;"></span>
+                        <span class="bio-particle"   style="left: 48%; top: 50%; --dur: 12s; --delay: 4s;"></span>
+                        <span class="bio-particle g" style="left: 36%; top: 88%; --dur: 8s;  --delay: 2.6s;"></span>
+                    </div>
 
                     <!-- ═══ 6 STAT NODES (orbiting around body) ═══ -->
 
@@ -3336,7 +4638,16 @@ input, select, textarea {
                     <textarea id="foodNote" class="food-details" rows="2" placeholder="รายละเอียดเพิ่มเติม (optional): ขนาด, ส่วนผสม, วิธีปรุง เช่น 'ใส่น้ำมันเยอะ', '2 จาน'"></textarea>
 
                     <!-- Big AI Analyze button -->
-                    <button type="button" class="btn-ai-large" id="aiAnalyzeBtn">✦ ให้ AI คำนวณโภชนาการให้</button>
+                    <button type="button" class="btn-ai-large" id="aiAnalyzeBtn"><span class="ai-btn-text">✦ ให้ AI คำนวณแคลให้</span></button>
+
+                    <!-- AI cooking overlay (shows while AI is processing) -->
+                    <div class="ai-cooking" id="aiCooking" aria-live="polite">
+                        <div class="ai-cooking-orb"><i></i></div>
+                        <div class="ai-cooking-text">
+                            <strong>AI กำลังคำนวณ…</strong>
+                            <small id="aiCookingStep">ตรวจหาเมนู · ประเมินส่วนผสม · คิดแคลอรี่</small>
+                        </div>
+                    </div>
 
                     <!-- Hidden date + meal storage -->
                     <input type="hidden" id="foodDate">
@@ -3344,7 +4655,7 @@ input, select, textarea {
                     <input type="hidden" id="foodAmount">
                     <input type="hidden" id="foodCalories">
 
-                    <!-- AI Results -->
+                    <!-- AI Results — Read-only Preview -->
                     <div class="ai-result-panel" id="aiBox">
                         <div class="ai-result-header">
                             <span class="ai-result-title" id="aiBoxTitle">AI Analysis</span>
@@ -3420,13 +4731,129 @@ input, select, textarea {
 
             <!-- Exercise View -->
             <section class="view" id="view-exercise">
-                <!-- ═══ AI Workout Plan Designer ═══ -->
-                <div class="card workout-designer">
-                    <div class="card-header">
-                        <h3>✦ AI Workout Plan Designer</h3>
+                <!-- ═══ Weekly Snapshot Stats ═══ -->
+                <div class="train-snapshot">
+                    <div class="train-stat">
+                        <div class="ts-icon">🔥</div>
+                        <div class="ts-body">
+                            <div class="ts-num" id="trWeekCal">0</div>
+                            <div class="ts-label">KCAL · 7D</div>
+                        </div>
                     </div>
+                    <div class="train-stat">
+                        <div class="ts-icon">⏱</div>
+                        <div class="ts-body">
+                            <div class="ts-num" id="trWeekMin">0</div>
+                            <div class="ts-label">MIN · 7D</div>
+                        </div>
+                    </div>
+                    <div class="train-stat">
+                        <div class="ts-icon">📏</div>
+                        <div class="ts-body">
+                            <div class="ts-num" id="trWeekKm">0</div>
+                            <div class="ts-label">KM · 7D</div>
+                        </div>
+                    </div>
+                    <div class="train-stat">
+                        <div class="ts-icon">⚡</div>
+                        <div class="ts-body">
+                            <div class="ts-num" id="trStreak">0</div>
+                            <div class="ts-label">DAY STREAK</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ AI Quick Logger ═══ -->
+                <div class="card training-logger">
+                    <div class="card-header">
+                        <h3>✦ Quick Log — พิมพ์ปกติ AI คำนวณให้</h3>
+                    </div>
+
+                    <!-- Sport pills -->
+                    <div class="sport-pills" id="sportPills">
+                        <button type="button" class="sport-pill active" data-sport="วิ่ง" data-mets="9.8"><span>🏃</span><span>วิ่ง</span></button>
+                        <button type="button" class="sport-pill" data-sport="เดิน" data-mets="3.8"><span>🚶</span><span>เดิน</span></button>
+                        <button type="button" class="sport-pill" data-sport="ปั่นจักรยาน" data-mets="7.5"><span>🚴</span><span>ปั่น</span></button>
+                        <button type="button" class="sport-pill" data-sport="ว่ายน้ำ" data-mets="8.3"><span>🏊</span><span>ว่ายน้ำ</span></button>
+                        <button type="button" class="sport-pill" data-sport="เวทเทรนนิ่ง" data-mets="6.0"><span>🏋</span><span>เวท</span></button>
+                        <button type="button" class="sport-pill" data-sport="โยคะ" data-mets="3.0"><span>🧘</span><span>โยคะ</span></button>
+                        <button type="button" class="sport-pill" data-sport="HIIT" data-mets="10.0"><span>⚡</span><span>HIIT</span></button>
+                        <button type="button" class="sport-pill" data-sport="อื่นๆ" data-mets="5.0"><span>🎯</span><span>อื่นๆ</span></button>
+                    </div>
+
+                    <!-- Natural language input -->
+                    <input type="text" id="trInput" class="food-input" placeholder="เช่น &quot;วิ่ง 5km pace 6.30&quot; หรือ &quot;ปั่น 45 นาที ความเร็วปานกลาง&quot;" autocomplete="off">
+
+                    <textarea id="trNote" class="food-details" rows="2" placeholder="รายละเอียดเพิ่มเติม (optional): เส้นทาง, ความรู้สึก, ความหนัก เช่น &quot;วิ่งขึ้นเขา หนัก&quot;"></textarea>
+
+                    <!-- Quick examples -->
+                    <div class="train-examples">
+                        <span class="te-label">ลองพิมพ์:</span>
+                        <button class="te-chip" data-fill="วิ่ง 5 km pace 6.30">วิ่ง 5km pace 6.30</button>
+                        <button class="te-chip" data-fill="เดิน 30 นาที สบายๆ">เดิน 30 นาที</button>
+                        <button class="te-chip" data-fill="เวท push day 45 นาที หนัก">Push day 45 นาที</button>
+                    </div>
+
+                    <button type="button" class="btn-ai-large" id="trAnalyzeBtn"><span class="ai-btn-text">✦ ให้ AI คำนวณแคลอรี่</span></button>
+
+                    <div class="ai-cooking" id="trCooking" aria-live="polite">
+                        <div class="ai-cooking-orb"><i></i></div>
+                        <div class="ai-cooking-text">
+                            <strong>AI กำลังคำนวณ…</strong>
+                            <small id="trCookingStep">ตีความกีฬา · คำนวณ METs · ประเมินพลังงาน</small>
+                        </div>
+                    </div>
+
+                    <!-- AI Result Panel -->
+                    <div class="ai-result-panel" id="trResult">
+                        <div class="ai-result-header">
+                            <span class="ai-result-title">Training Analysis ⚡</span>
+                            <span class="ai-result-status" id="trStatusBadge">COMPLETE</span>
+                        </div>
+                        <div class="train-result-grid">
+                            <div class="ai-macro-cell cal">
+                                <div class="ai-macro-cell-label">CALORIES</div>
+                                <div class="ai-macro-cell-value" id="trResCal">--</div>
+                                <div class="ai-macro-cell-unit">kcal</div>
+                            </div>
+                            <div class="ai-macro-cell pro">
+                                <div class="ai-macro-cell-label">DURATION</div>
+                                <div class="ai-macro-cell-value" id="trResDur">--</div>
+                                <div class="ai-macro-cell-unit">min</div>
+                            </div>
+                            <div class="ai-macro-cell carb">
+                                <div class="ai-macro-cell-label">DISTANCE</div>
+                                <div class="ai-macro-cell-value" id="trResDist">--</div>
+                                <div class="ai-macro-cell-unit">km</div>
+                            </div>
+                            <div class="ai-macro-cell fat">
+                                <div class="ai-macro-cell-label">PACE / METs</div>
+                                <div class="ai-macro-cell-value" id="trResPace">--</div>
+                                <div class="ai-macro-cell-unit" id="trResPaceUnit">/km</div>
+                            </div>
+                        </div>
+                        <div class="ai-analysis-text" id="trResNote">—</div>
+                        <div class="ai-result-actions">
+                            <button type="button" class="btn-secondary" id="trDiscardBtn">ยกเลิก</button>
+                            <button type="button" class="btn-primary" id="trSaveBtn">✓ บันทึกการฝึก</button>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="trSport" value="วิ่ง">
+                    <input type="hidden" id="trMets" value="9.8">
+                </div>
+
+                <!-- ═══ AI Workout Plan Designer (collapsed by default) ═══ -->
+                <details class="card workout-designer-card">
+                    <summary class="designer-summary">
+                        <span class="ds-icon">📋</span>
+                        <span class="ds-title">AI Workout Plan Designer</span>
+                        <span class="ds-sub">ออกแบบตาราง 7 วัน · กดเพื่อเปิด</span>
+                        <span class="ds-chevron">▾</span>
+                    </summary>
+
                     <div class="info-box">
-                        บอก AI ว่าคุณอยากได้หุ่นแบบไหน อยากออกกำลังกี่วัน → AI ออกแบบ <strong>ตาราง 7 วัน</strong> ให้ทันที (ท่า, จำนวนเซ็ต, จำนวนครั้ง)
+                        บอก AI ว่าอยากได้หุ่นแบบไหน → AI ออกแบบ <strong>ตาราง 7 วัน</strong> ให้ (ท่า, เซ็ต, ครั้ง)
                     </div>
 
                     <div class="designer-grid">
@@ -3473,58 +4900,19 @@ input, select, textarea {
                             <input type="text" id="wpNote" class="field" placeholder="เช่น เข่าบาดเจ็บ, เน้นหน้าท้อง, มีเวลา 30 นาที/วัน">
                         </div>
                         <div class="form-actions form-actions-row" style="grid-column: 1 / -1">
-                            <button type="button" class="btn-ai-large" id="generatePlanBtn">✦ Generate Workout Plan</button>
+                            <button type="button" class="btn-ai-large" id="generatePlanBtn"><span class="ai-btn-text">✦ Generate Workout Plan</span></button>
                         </div>
                     </div>
 
                     <div class="workout-plan" id="workoutPlan">
                         <div class="empty">ตอบคำถามด้านบนแล้วกด Generate AI จะออกแบบตารางให้</div>
                     </div>
-                </div>
+                </details>
 
-                <!-- ═══ Manual Log ═══ -->
+                <!-- ═══ Recent training log ═══ -->
                 <div class="card">
                     <div class="card-header">
-                        <h3>บันทึกการออกกำลังกาย (Manual)</h3>
-                    </div>
-                    <form class="form-grid" id="exerciseForm">
-                        <div class="form-group">
-                            <label>วันที่</label>
-                            <input type="date" id="exDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label>ประเภท</label>
-                            <select id="exType" required>
-                                <option value="เดิน">เดิน</option>
-                                <option value="วิ่ง">วิ่ง</option>
-                                <option value="ปั่นจักรยาน">ปั่นจักรยาน</option>
-                                <option value="ว่ายน้ำ">ว่ายน้ำ</option>
-                                <option value="โยคะ">โยคะ</option>
-                                <option value="เวทเทรนนิ่ง">เวทเทรนนิ่ง</option>
-                                <option value="อื่นๆ">อื่นๆ</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>ระยะเวลา (นาที)</label>
-                            <input type="number" id="exDuration" min="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label>แคลอรี่ที่เผาผลาญ (kcal)</label>
-                            <input type="number" id="exCalories" min="0" required>
-                        </div>
-                        <div class="form-group form-wide">
-                            <label>หมายเหตุ</label>
-                            <input type="text" id="exNote" placeholder="เช่น วิ่งรอบสวน">
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">บันทึก</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3>รายการออกกำลังกาย</h3>
+                        <h3>Training Log — ประวัติการฝึก</h3>
                     </div>
                     <div class="table-wrap">
                         <table class="data-table" id="exTable">
@@ -3533,6 +4921,7 @@ input, select, textarea {
                                     <th>วันที่</th>
                                     <th>ประเภท</th>
                                     <th class="num">นาที</th>
+                                    <th class="num">กม.</th>
                                     <th class="num">เผาผลาญ</th>
                                     <th>หมายเหตุ</th>
                                     <th></th>
@@ -3542,40 +4931,247 @@ input, select, textarea {
                         </table>
                     </div>
                 </div>
+
+                <!-- Hidden manual form (legacy compatibility) -->
+                <form id="exerciseForm" style="display:none">
+                    <input type="date" id="exDate">
+                    <input id="exType">
+                    <input type="number" id="exDuration">
+                    <input type="number" id="exCalories">
+                    <input id="exNote">
+                </form>
             </section>
 
-            <!-- Weight View -->
+            <!-- Body View — Full redesign -->
             <section class="view" id="view-weight">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>บันทึกน้ำหนัก</h3>
+                <!-- ═══ Dual Gauge Hero — BMI + Body Fat ═══ -->
+                <div class="body-hero">
+                    <!-- BMI Gauge -->
+                    <div class="gauge-card">
+                        <div class="gauge-label">BODY MASS INDEX</div>
+                        <div class="gauge-wrap">
+                            <svg class="gauge-svg" viewBox="0 0 200 130">
+                                <defs>
+                                    <linearGradient id="bmiGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%"   stop-color="#38bdf8"/>
+                                        <stop offset="35%"  stop-color="#34d399"/>
+                                        <stop offset="60%"  stop-color="#fbbf24"/>
+                                        <stop offset="100%" stop-color="#f87171"/>
+                                    </linearGradient>
+                                </defs>
+                                <!-- Track -->
+                                <path d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="14" stroke-linecap="round"/>
+                                <!-- Color band -->
+                                <path d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke="url(#bmiGrad)" stroke-width="14" stroke-linecap="round" opacity="0.55"/>
+                                <!-- Needle -->
+                                <g id="bmiNeedle">
+                                    <line x1="100" y1="110" x2="100" y2="36" stroke="#fff" stroke-width="2.5" stroke-linecap="round" filter="drop-shadow(0 0 6px #c084fc)"/>
+                                    <circle cx="100" cy="110" r="8" fill="#0a0220" stroke="#c084fc" stroke-width="2"/>
+                                    <circle cx="100" cy="110" r="3" fill="#c084fc"/>
+                                </g>
+                            </svg>
+                            <div class="gauge-readout">
+                                <div class="gauge-num" id="bmiValue">--</div>
+                                <div class="gauge-cat" id="bmiCat">—</div>
+                            </div>
+                        </div>
+                        <div class="gauge-scale">
+                            <span>18.5</span><span>23</span><span>25</span><span>30+</span>
+                        </div>
                     </div>
-                    <form class="form-grid" id="weightForm">
-                        <div class="form-group">
-                            <label>วันที่</label>
-                            <input type="date" id="wDate" required>
+
+                    <!-- Body Fat Gauge -->
+                    <div class="gauge-card">
+                        <div class="gauge-label">BODY FAT %</div>
+                        <div class="gauge-wrap">
+                            <svg class="gauge-svg" viewBox="0 0 200 130">
+                                <defs>
+                                    <linearGradient id="bfGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%"   stop-color="#22d3ee"/>
+                                        <stop offset="40%"  stop-color="#a855f7"/>
+                                        <stop offset="100%" stop-color="#ec4899"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="14" stroke-linecap="round"/>
+                                <path d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke="url(#bfGrad)" stroke-width="14" stroke-linecap="round" opacity="0.55"/>
+                                <g id="bfNeedle">
+                                    <line x1="100" y1="110" x2="100" y2="36" stroke="#fff" stroke-width="2.5" stroke-linecap="round" filter="drop-shadow(0 0 6px #ec4899)"/>
+                                    <circle cx="100" cy="110" r="8" fill="#0a0220" stroke="#ec4899" stroke-width="2"/>
+                                    <circle cx="100" cy="110" r="3" fill="#ec4899"/>
+                                </g>
+                            </svg>
+                            <div class="gauge-readout">
+                                <div class="gauge-num" id="bfValue">--</div>
+                                <div class="gauge-cat" id="bfCat">— Navy Method</div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>น้ำหนัก (kg)</label>
-                            <input type="number" id="wWeight" min="20" max="300" step="0.1" required>
+                        <div class="gauge-scale">
+                            <span>10%</span><span>20%</span><span>25%</span><span>35%+</span>
                         </div>
-                        <div class="form-group">
-                            <label>ส่วนสูง (cm)</label>
-                            <input type="number" id="wHeight" min="100" max="250" step="0.1" required>
-                        </div>
-                        <div class="form-group form-wide">
-                            <label>หมายเหตุ</label>
-                            <input type="text" id="wNote" placeholder="เช่น หลังตื่นนอน">
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">บันทึก</button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
 
+                <!-- Composition strip -->
+                <div class="comp-strip">
+                    <div class="comp-cell">
+                        <div class="comp-label">LEAN MASS</div>
+                        <div class="comp-val" id="leanMass">--</div>
+                        <div class="comp-unit">kg</div>
+                    </div>
+                    <div class="comp-cell">
+                        <div class="comp-label">FAT MASS</div>
+                        <div class="comp-val" id="fatMass">--</div>
+                        <div class="comp-unit">kg</div>
+                    </div>
+                    <div class="comp-cell">
+                        <div class="comp-label">IDEAL WEIGHT</div>
+                        <div class="comp-val" id="idealWeight">--</div>
+                        <div class="comp-unit">kg · BMI 22</div>
+                    </div>
+                    <div class="comp-cell">
+                        <div class="comp-label">WAIST / HEIGHT</div>
+                        <div class="comp-val" id="whRatio">--</div>
+                        <div class="comp-unit" id="whRisk">—</div>
+                    </div>
+                </div>
+
+                <!-- ═══ Calculator Inputs ═══ -->
+                <div class="card body-calc-card">
+                    <div class="card-header">
+                        <h3>✦ Body Composition Calculator</h3>
+                    </div>
+                    <div class="info-box">
+                        ใส่ค่าวัด AI คำนวณ <strong>BMI + Body Fat % (Navy Method)</strong> ให้ทันที — Navy formula ใช้ส่วนสูง รอบคอ รอบเอว (และรอบสะโพกในผู้หญิง)
+                    </div>
+
+                    <div class="body-grid">
+                        <div class="bg-row">
+                            <label class="bg-label">เพศ</label>
+                            <div class="sex-toggle">
+                                <button type="button" class="sex-btn active" data-sex="M">♂ ชาย</button>
+                                <button type="button" class="sex-btn" data-sex="F">♀ หญิง</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-row">
+                            <label class="bg-label" for="bAge">อายุ (ปี)</label>
+                            <input type="number" id="bAge" class="bg-input" min="10" max="100" placeholder="25">
+                        </div>
+
+                        <div class="bg-row">
+                            <label class="bg-label" for="bHeight">ส่วนสูง (cm)</label>
+                            <input type="number" id="bHeight" class="bg-input" min="100" max="250" step="0.1" placeholder="170">
+                        </div>
+
+                        <div class="bg-row">
+                            <label class="bg-label" for="bWeight">น้ำหนัก (kg)</label>
+                            <input type="number" id="bWeight" class="bg-input" min="20" max="300" step="0.1" placeholder="65.0">
+                        </div>
+
+                        <div class="bg-row">
+                            <label class="bg-label" for="bNeck">รอบคอ (cm)</label>
+                            <input type="number" id="bNeck" class="bg-input" min="20" max="80" step="0.1" placeholder="38">
+                        </div>
+
+                        <div class="bg-row">
+                            <label class="bg-label" for="bWaist">รอบเอว (cm)</label>
+                            <input type="number" id="bWaist" class="bg-input" min="40" max="200" step="0.1" placeholder="80">
+                        </div>
+
+                        <div class="bg-row" id="bHipRow" style="display:none">
+                            <label class="bg-label" for="bHip">รอบสะโพก (cm)</label>
+                            <input type="number" id="bHip" class="bg-input" min="40" max="200" step="0.1" placeholder="95">
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-ai-large" id="bodyCalcBtn"><span class="ai-btn-text">✦ คำนวณ & บันทึก</span></button>
+
+                    <div class="ai-cooking" id="bodyCooking" aria-live="polite">
+                        <div class="ai-cooking-orb"><i></i></div>
+                        <div class="ai-cooking-text">
+                            <strong>กำลังประมวลผล…</strong>
+                            <small>คำนวณ BMI · Navy formula · Lean/Fat mass</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ Body Measurements Logger ═══ -->
                 <div class="card">
                     <div class="card-header">
-                        <h3>ประวัติน้ำหนักและ BMI</h3>
+                        <h3>📏 Body Measurements</h3>
+                        <span class="ds-sub" style="margin: 0">บันทึกรอบส่วนต่างๆ — แตะที่ส่วนของร่างกาย</span>
+                    </div>
+                    <div class="body-map-wrap">
+                        <!-- Silhouette -->
+                        <svg class="body-map-svg" viewBox="0 0 240 360" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="bmBody" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="rgba(168, 85, 247, 0.15)"/>
+                                    <stop offset="100%" stop-color="rgba(56, 189, 248, 0.10)"/>
+                                </linearGradient>
+                                <linearGradient id="bmOutline" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#c084fc"/>
+                                    <stop offset="100%" stop-color="#22d3ee"/>
+                                </linearGradient>
+                            </defs>
+                            <!-- Body silhouette -->
+                            <ellipse cx="120" cy="44" rx="22" ry="26" fill="url(#bmBody)" stroke="url(#bmOutline)" stroke-width="1.2"/>
+                            <path d="M 110 70 L 130 70 L 132 82 L 108 82 Z" fill="url(#bmBody)" stroke="url(#bmOutline)" stroke-width="1"/>
+                            <path d="M 86 84 Q 76 86 74 100 L 78 210 Q 80 226 96 228 L 144 228 Q 160 226 162 210 L 166 100 Q 164 86 154 84 Z" fill="url(#bmBody)" stroke="url(#bmOutline)" stroke-width="1.3"/>
+                            <path d="M 74 90 L 30 104 L 28 130 L 76 118 Z" fill="url(#bmBody)" stroke="url(#bmOutline)" stroke-width="1.1"/>
+                            <path d="M 166 90 L 210 104 L 212 130 L 164 118 Z" fill="url(#bmBody)" stroke="url(#bmOutline)" stroke-width="1.1"/>
+                            <path d="M 30 104 L 12 142 L 22 162 L 38 138 Z" fill="url(#bmBody)" stroke="url(#bmOutline)" stroke-width="1.1"/>
+                            <path d="M 210 104 L 228 142 L 218 162 L 202 138 Z" fill="url(#bmBody)" stroke="url(#bmOutline)" stroke-width="1.1"/>
+                            <path d="M 94 230 L 88 320 L 100 340 L 118 340 L 120 230 Z" fill="url(#bmBody)" stroke="url(#bmOutline)" stroke-width="1.1"/>
+                            <path d="M 122 230 L 124 340 L 142 340 L 152 320 L 146 230 Z" fill="url(#bmBody)" stroke="url(#bmOutline)" stroke-width="1.1"/>
+
+                            <!-- Measurement dots (click targets) -->
+                            <g class="bm-dot" data-part="neck" data-label="รอบคอ" tabindex="0">
+                                <circle cx="120" cy="76" r="6" class="bm-dot-circle"/>
+                                <line x1="120" y1="76" x2="184" y2="64" class="bm-dot-line"/>
+                                <text x="188" y="67" class="bm-dot-text">รอบคอ</text>
+                            </g>
+                            <g class="bm-dot" data-part="chest" data-label="รอบอก" tabindex="0">
+                                <circle cx="120" cy="115" r="6" class="bm-dot-circle"/>
+                                <line x1="120" y1="115" x2="184" y2="105" class="bm-dot-line"/>
+                                <text x="188" y="108" class="bm-dot-text">รอบอก</text>
+                            </g>
+                            <g class="bm-dot" data-part="waist" data-label="รอบเอว" tabindex="0">
+                                <circle cx="120" cy="175" r="6" class="bm-dot-circle"/>
+                                <line x1="120" y1="175" x2="184" y2="180" class="bm-dot-line"/>
+                                <text x="188" y="183" class="bm-dot-text">รอบเอว</text>
+                            </g>
+                            <g class="bm-dot" data-part="hip" data-label="รอบสะโพก" tabindex="0">
+                                <circle cx="120" cy="222" r="6" class="bm-dot-circle"/>
+                                <line x1="120" y1="222" x2="184" y2="232" class="bm-dot-line"/>
+                                <text x="188" y="235" class="bm-dot-text">สะโพก</text>
+                            </g>
+                            <g class="bm-dot" data-part="bicep" data-label="รอบแขน" tabindex="0">
+                                <circle cx="38" cy="120" r="6" class="bm-dot-circle"/>
+                                <line x1="38" y1="120" x2="8" y2="112" class="bm-dot-line"/>
+                                <text x="4" y="105" class="bm-dot-text bm-text-left">แขน</text>
+                            </g>
+                            <g class="bm-dot" data-part="thigh" data-label="รอบต้นขา" tabindex="0">
+                                <circle cx="104" cy="265" r="6" class="bm-dot-circle"/>
+                                <line x1="104" y1="265" x2="8" y2="272" class="bm-dot-line"/>
+                                <text x="4" y="275" class="bm-dot-text bm-text-left">ต้นขา</text>
+                            </g>
+                            <g class="bm-dot" data-part="calf" data-label="รอบน่อง" tabindex="0">
+                                <circle cx="106" cy="318" r="6" class="bm-dot-circle"/>
+                                <line x1="106" y1="318" x2="184" y2="325" class="bm-dot-line"/>
+                                <text x="188" y="328" class="bm-dot-text">น่อง</text>
+                            </g>
+                        </svg>
+
+                        <!-- Measurement list -->
+                        <div class="bm-list" id="bmList"></div>
+                    </div>
+                </div>
+
+                <!-- ═══ Weight history ═══ -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Weight History</h3>
                     </div>
                     <div class="chart-wrap large"><canvas id="weightFullChart"></canvas></div>
                     <div class="table-wrap">
@@ -3583,11 +5179,10 @@ input, select, textarea {
                             <thead>
                                 <tr>
                                     <th>วันที่</th>
-                                    <th class="num">น้ำหนัก (kg)</th>
-                                    <th class="num">ส่วนสูง (cm)</th>
+                                    <th class="num">น้ำหนัก</th>
+                                    <th class="num">ส่วนสูง</th>
                                     <th class="num">BMI</th>
                                     <th>หมวด</th>
-                                    <th>หมายเหตุ</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -3595,14 +5190,160 @@ input, select, textarea {
                         </table>
                     </div>
                 </div>
+
+                <!-- Hidden legacy form to keep JS reference happy -->
+                <form id="weightForm" style="display:none">
+                    <input type="date" id="wDate">
+                    <input type="number" id="wWeight">
+                    <input type="number" id="wHeight">
+                    <input id="wNote">
+                </form>
+
+                <!-- Bottom sheet modal for measurement entry -->
+                <div class="bm-modal" id="bmModal" hidden>
+                    <div class="bm-modal-backdrop" data-close></div>
+                    <div class="bm-modal-card">
+                        <div class="bm-modal-title" id="bmModalTitle">บันทึกค่าวัด</div>
+                        <div class="bm-modal-sub">หน่วย: cm — กดจุดบนรูปเพื่อเลือกส่วนที่จะวัด</div>
+                        <input type="number" id="bmInput" class="bg-input" step="0.1" min="10" max="200" placeholder="0.0">
+                        <div class="bm-modal-actions">
+                            <button type="button" class="btn-secondary" data-close>ยกเลิก</button>
+                            <button type="button" class="btn-primary" id="bmSaveBtn">บันทึก</button>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- Wellness View -->
             <section class="view" id="view-wellness">
+                <!-- ═══ Recovery Score Hero ═══ -->
+                <div class="recovery-hero">
+                    <div class="recovery-orb-wrap">
+                        <svg class="recovery-orb-svg" viewBox="0 0 240 240">
+                            <defs>
+                                <linearGradient id="recRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%"   stop-color="#22d3ee"/>
+                                    <stop offset="50%"  stop-color="#a855f7"/>
+                                    <stop offset="100%" stop-color="#ec4899"/>
+                                </linearGradient>
+                                <radialGradient id="recOrbGlow" cx="50%" cy="50%" r="50%">
+                                    <stop offset="0%" stop-color="#c084fc" stop-opacity="0.5"/>
+                                    <stop offset="100%" stop-color="#c084fc" stop-opacity="0"/>
+                                </radialGradient>
+                            </defs>
+                            <!-- Outer glow -->
+                            <circle class="recovery-orb-pulse" cx="120" cy="120" r="110" fill="url(#recOrbGlow)"/>
+                            <!-- Track -->
+                            <circle cx="120" cy="120" r="96" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="14"/>
+                            <!-- Tick marks -->
+                            <g stroke="rgba(192, 132, 252, 0.18)" stroke-width="1">
+                                <line x1="120" y1="14"  x2="120" y2="22"/>
+                                <line x1="120" y1="218" x2="120" y2="226"/>
+                                <line x1="14"  y1="120" x2="22"  y2="120"/>
+                                <line x1="218" y1="120" x2="226" y2="120"/>
+                            </g>
+                            <!-- Progress ring -->
+                            <circle id="recRing" class="recovery-orb-ring" cx="120" cy="120" r="96" fill="none"
+                                    stroke="url(#recRingGrad)" stroke-width="14" stroke-linecap="round"
+                                    transform="rotate(-90 120 120)"
+                                    stroke-dasharray="603.2" stroke-dashoffset="603.2"
+                                    filter="drop-shadow(0 0 12px rgba(168, 85, 247, 0.7))"/>
+                            <!-- Inner orb -->
+                            <circle cx="120" cy="120" r="78" fill="rgba(10, 4, 30, 0.6)" stroke="rgba(192, 132, 252, 0.18)" stroke-width="1"/>
+                        </svg>
+                        <div class="recovery-orb-center">
+                            <div class="recovery-score" id="recScore">--</div>
+                            <div class="recovery-score-max">/ 100</div>
+                            <div class="recovery-status" id="recStatus">PENDING</div>
+                        </div>
+                    </div>
+                    <div class="recovery-summary">
+                        <div class="recovery-summary-title">RECOVERY SCORE — AI</div>
+                        <div class="recovery-summary-text" id="recSummary">กรอกข้อมูลด้านล่าง แล้วกดคำนวณ — AI จะให้คะแนนการฟื้นตัวของวันนี้พร้อมคำแนะนำว่าควรพักหรือออกกำลังกายหนัก</div>
+                        <div class="rec-factors" id="recFactors"></div>
+                    </div>
+                </div>
+
+                <!-- ═══ Score inputs ═══ -->
+                <div class="card body-calc-card">
+                    <div class="card-header">
+                        <h3>✦ Recovery Inputs — บอกร่างกายเช้านี้</h3>
+                    </div>
+
+                    <div class="rec-grid">
+                        <!-- Sleep hours -->
+                        <div class="rec-slider-row">
+                            <div class="rec-slider-head">
+                                <span class="rec-slider-label">SLEEP HOURS</span>
+                                <span class="rec-slider-val"><span id="recSleepVal">7.0</span> hr</span>
+                            </div>
+                            <input type="range" id="recSleep" class="rec-slider" min="0" max="12" step="0.25" value="7">
+                        </div>
+
+                        <!-- Water % -->
+                        <div class="rec-slider-row">
+                            <div class="rec-slider-head">
+                                <span class="rec-slider-label">WATER % OF GOAL</span>
+                                <span class="rec-slider-val"><span id="recWaterVal">80</span>%</span>
+                            </div>
+                            <input type="range" id="recWater" class="rec-slider" min="0" max="150" step="5" value="80">
+                        </div>
+
+                        <!-- Resting HR -->
+                        <div class="rec-slider-row">
+                            <div class="rec-slider-head">
+                                <span class="rec-slider-label">RESTING HR (bpm)</span>
+                                <span class="rec-slider-val"><span id="recHrVal">60</span></span>
+                            </div>
+                            <input type="range" id="recHr" class="rec-slider" min="40" max="100" step="1" value="60">
+                        </div>
+
+                        <!-- Soreness -->
+                        <div class="rec-slider-row">
+                            <div class="rec-slider-head">
+                                <span class="rec-slider-label">MUSCLE SORENESS</span>
+                                <span class="rec-slider-val"><span id="recSoreVal">2</span> / 5</span>
+                            </div>
+                            <input type="range" id="recSore" class="rec-slider" min="0" max="5" step="1" value="2">
+                        </div>
+                    </div>
+
+                    <!-- Sleep quality + Workout intensity -->
+                    <div style="margin-top: 4px">
+                        <div class="bg-label" style="margin-bottom: 8px">SLEEP QUALITY</div>
+                        <div class="rec-pills" id="recQualityPills">
+                            <button type="button" class="rec-pill" data-q="แย่"><span class="rec-pill-icon">😴</span>แย่</button>
+                            <button type="button" class="rec-pill" data-q="ปานกลาง"><span class="rec-pill-icon">😐</span>กลาง</button>
+                            <button type="button" class="rec-pill active" data-q="ดี"><span class="rec-pill-icon">🙂</span>ดี</button>
+                            <button type="button" class="rec-pill" data-q="ดีมาก"><span class="rec-pill-icon">😄</span>ดีมาก</button>
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px">
+                        <div class="bg-label" style="margin-bottom: 8px">WORKOUT INTENSITY · เมื่อวาน</div>
+                        <div class="rec-pills" id="recIntensityPills">
+                            <button type="button" class="rec-pill active" data-i="rest"><span class="rec-pill-icon">😌</span>พัก</button>
+                            <button type="button" class="rec-pill" data-i="light"><span class="rec-pill-icon">🚶</span>เบา</button>
+                            <button type="button" class="rec-pill" data-i="moderate"><span class="rec-pill-icon">🏃</span>กลาง</button>
+                            <button type="button" class="rec-pill" data-i="heavy"><span class="rec-pill-icon">🔥</span>หนัก</button>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-ai-large" id="recCalcBtn" style="margin-top: 18px"><span class="ai-btn-text">✦ คำนวณ Recovery Score</span></button>
+
+                    <div class="ai-cooking" id="recCooking" aria-live="polite">
+                        <div class="ai-cooking-orb"><i></i></div>
+                        <div class="ai-cooking-text">
+                            <strong>AI กำลังประมวลผล…</strong>
+                            <small id="recCookingStep">ตรวจคุณภาพการนอน · ประเมินความเหนื่อย · ให้คะแนน</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ Quick logging (sleep + water) ═══ -->
                 <div class="two-col">
                     <div class="card">
                         <div class="card-header">
-                            <h3>บันทึกน้ำดื่ม</h3>
+                            <h3>💧 บันทึกน้ำดื่ม</h3>
                         </div>
                         <form class="form-grid" id="waterForm">
                             <div class="form-group">
@@ -3627,7 +5368,7 @@ input, select, textarea {
 
                     <div class="card">
                         <div class="card-header">
-                            <h3>บันทึกการนอน</h3>
+                            <h3>🌙 บันทึกการนอน</h3>
                         </div>
                         <form class="form-grid" id="sleepForm">
                             <div class="form-group">
@@ -3654,6 +5395,16 @@ input, select, textarea {
                     </div>
                 </div>
 
+                <!-- ═══ Recovery History ═══ -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Recovery Score History · 7 วัน</h3>
+                    </div>
+                    <div class="rec-history" id="recHistory">
+                        <div class="empty">ยังไม่มีคะแนน — กดคำนวณด้านบนเพื่อบันทึกคะแนนแรก</div>
+                    </div>
+                </div>
+
                 <div class="two-col">
                     <div class="card">
                         <div class="card-header">
@@ -3661,7 +5412,7 @@ input, select, textarea {
                         </div>
                         <div class="table-wrap">
                             <table class="data-table" id="waterTable">
-                                <thead><tr><th>วันที่</th><th class="num">รวม (ml)</th><th class="num">จำนวนครั้ง</th></tr></thead>
+                                <thead><tr><th>วันที่</th><th class="num">รวม (ml)</th><th class="num">ครั้ง</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -3868,8 +5619,23 @@ const Storage = {
     },
 
     clear() {
+        // Wipe logs + per-user health stats, but keep connectivity (sheetUrl/secret) so user doesn't re-enter
         this.data = { ...defaultData };
+        const keep = {
+            sheetUrl: this.config.sheetUrl,
+            sheetSecret: this.config.sheetSecret,
+            userName: this.config.userName,
+            goalCalories: this.config.goalCalories,
+            goalWater: this.config.goalWater,
+            defaultHeight: this.config.defaultHeight
+        };
+        this.config = { ...defaultConfig, ...keep };
+        // Explicitly drop body/measurements/recovery (which live in config)
+        delete this.config.bodyStats;
+        delete this.config.measurements;
+        delete this.config.recoveryHistory;
         this.save();
+        this.saveConfig();
     },
 
     exportJSON() {
@@ -3945,11 +5711,16 @@ const Storage = {
         return res;
     },
 
-    // ===== Gemini AI =====
+    // ===== Gemini/Groq AI =====
     async aiMeal(input) {
         // input can be a string (legacy) or an object { description, note, image, mime }
         const payload = (typeof input === 'string') ? { description: input } : input;
         return this._request('aiMeal', payload);
+    },
+
+    async aiExercise(input) {
+        // input: { description, note, sport, weightKg }
+        return this._request('aiExercise', input);
     },
 
     async aiInsight(weeklyData) {
@@ -4044,7 +5815,26 @@ window.LocalAI = LocalAI;
 // ----- Utilities -----
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => [...document.querySelectorAll(sel)];
-const todayISO = () => new Date().toISOString().slice(0, 10);
+// Escape user/AI strings before rendering via innerHTML (XSS protection)
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Local-timezone-safe today (avoids UTC offset bug — e.g. 1am Thailand = previous day in UTC)
+const toLocalISO = (d) => {
+    const dt = d instanceof Date ? d : new Date();
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+};
+const todayISO = () => toLocalISO(new Date());
 
 function fmtThaiDate(iso) {
     if (!iso) return '';
@@ -4122,9 +5912,9 @@ function switchView(name) {
     if (name === 'insights') renderInsights();
     if (name === 'dashboard') renderDashboard();
     if (name === 'food') renderFood();
-    if (name === 'exercise') renderExercise();
-    if (name === 'weight') renderWeight();
-    if (name === 'wellness') renderWellness();
+    if (name === 'exercise') { renderExercise(); renderTrainingSnapshot(); }
+    if (name === 'weight') { renderWeight(); renderMeasurements(); }
+    if (name === 'wellness') { renderWellness(); renderRecoveryHistory(); }
     if (name === 'settings') renderSettings();
 }
 
@@ -4134,7 +5924,7 @@ function getLast7Days() {
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        days.push(d.toISOString().slice(0, 10));
+        days.push(toLocalISO(d));
     }
     return days;
 }
@@ -4299,7 +6089,7 @@ function computeStreak() {
     let streak = 0;
     const d = new Date();
     for (let i = 0; i < 365; i++) {
-        const iso = d.toISOString().slice(0, 10);
+        const iso = toLocalISO(d);
         if (dates.has(iso)) { streak++; d.setDate(d.getDate() - 1); }
         else if (i === 0)  { d.setDate(d.getDate() - 1); }  // grace for today
         else break;
@@ -4448,7 +6238,7 @@ function renderHeatmap() {
     let activeDays = 0, totalActivity = 0;
     for (let i = days - 1; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i);
-        const iso = d.toISOString().slice(0, 10);
+        const iso = toLocalISO(d);
         let activity = 0;
         activity += Storage.getAll('food').filter(x => x.date === iso).length;
         activity += Storage.getAll('exercise').filter(x => x.date === iso).length * 2;
@@ -4673,8 +6463,7 @@ function renderDashboard() {
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        const iso = d.toISOString().slice(0, 10);
-        last7.push(iso);
+        last7.push(toLocalISO(d));
     }
     const calData = last7.map(iso => Storage.getAll('food').filter(x => x.date === iso).reduce((s, x) => s + (+x.calories || 0), 0));
     const burnData = last7.map(iso => Storage.getAll('exercise').filter(x => x.date === iso).reduce((s, x) => s + (+x.calories || 0), 0));
@@ -4767,11 +6556,11 @@ function renderFood() {
     tbody.innerHTML = rows.map(r => `
         <tr>
             <td>${fmtThaiDate(r.date)}</td>
-            <td>${r.meal}</td>
-            <td>${r.name}</td>
-            <td>${r.amount || '-'}</td>
-            <td class="num">${r.calories}</td>
-            <td><button class="btn-delete" data-id="${r.id}" data-cat="food">ลบ</button></td>
+            <td>${escapeHtml(r.meal)}</td>
+            <td>${escapeHtml(r.name)}</td>
+            <td>${escapeHtml(r.amount) || '-'}</td>
+            <td class="num">${+r.calories || 0}</td>
+            <td><button class="btn-delete" data-id="${escapeHtml(r.id)}" data-cat="food">ลบ</button></td>
         </tr>
     `).join('');
 }
@@ -4781,17 +6570,18 @@ function renderExercise() {
     const rows = Storage.getAll('exercise').slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     const tbody = $('#exTable tbody');
     if (rows.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty">ยังไม่มีรายการ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="empty">ยังไม่มีรายการ — ลองพิมพ์ "วิ่ง 5km pace 6.30" ด้านบน</td></tr>';
         return;
     }
     tbody.innerHTML = rows.map(r => `
         <tr>
             <td>${fmtThaiDate(r.date)}</td>
-            <td>${r.exType}</td>
-            <td class="num">${r.duration}</td>
-            <td class="num">${r.calories}</td>
-            <td>${r.note || '-'}</td>
-            <td><button class="btn-delete" data-id="${r.id}" data-cat="exercise">ลบ</button></td>
+            <td>${escapeHtml(r.exType)}</td>
+            <td class="num">${+r.duration || 0}</td>
+            <td class="num">${r.distance ? escapeHtml(r.distance) : '-'}</td>
+            <td class="num">${+r.calories || 0}</td>
+            <td>${escapeHtml(r.note) || '-'}</td>
+            <td><button class="btn-delete" data-id="${escapeHtml(r.id)}" data-cat="exercise">ลบ</button></td>
         </tr>
     `).join('');
 }
@@ -4801,7 +6591,7 @@ function renderWeight() {
     const rows = Storage.getAll('weight').slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     const tbody = $('#weightTable tbody');
     if (rows.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty">ยังไม่มีรายการ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">ยังไม่มีรายการ — ใช้ Body Calculator ด้านบนเพื่อบันทึก</td></tr>';
     } else {
         tbody.innerHTML = rows.map(r => {
             const bmi = calcBMI(+r.weight, +r.height);
@@ -4809,12 +6599,11 @@ function renderWeight() {
             return `
                 <tr>
                     <td>${fmtThaiDate(r.date)}</td>
-                    <td class="num">${r.weight}</td>
-                    <td class="num">${r.height}</td>
+                    <td class="num">${+r.weight || 0}</td>
+                    <td class="num">${+r.height || 0}</td>
                     <td class="num">${bmi ?? '-'}</td>
-                    <td><span class="bmi-badge ${cat.cls}">${cat.label}</span></td>
-                    <td>${r.note || '-'}</td>
-                    <td><button class="btn-delete" data-id="${r.id}" data-cat="weight">ลบ</button></td>
+                    <td><span class="bmi-badge ${cat.cls}">${escapeHtml(cat.label)}</span></td>
+                    <td><button class="btn-delete" data-id="${escapeHtml(r.id)}" data-cat="weight">ลบ</button></td>
                 </tr>
             `;
         }).join('');
@@ -4878,7 +6667,7 @@ function renderWellness() {
     const sleepRows = Storage.getAll('sleep').slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     const sleepBody = $('#sleepTable tbody');
     sleepBody.innerHTML = sleepRows.length === 0 ? '<tr><td colspan="4" class="empty">ยังไม่มีข้อมูล</td></tr>'
-        : sleepRows.map(r => `<tr><td>${fmtThaiDate(r.date)}</td><td class="num">${r.hours}</td><td>${r.quality}</td><td><button class="btn-delete" data-id="${r.id}" data-cat="sleep">ลบ</button></td></tr>`).join('');
+        : sleepRows.map(r => `<tr><td>${fmtThaiDate(r.date)}</td><td class="num">${+r.hours || 0}</td><td>${escapeHtml(r.quality)}</td><td><button class="btn-delete" data-id="${escapeHtml(r.id)}" data-cat="sleep">ลบ</button></td></tr>`).join('');
 }
 
 // ----- AI Insights -----
@@ -4926,7 +6715,7 @@ function renderWorkoutPlan(planObj) {
     if (tips.length) {
         html += `<div class="workout-plan-tips">
             <div class="workout-plan-tips-title">✦ AI Coach Tips</div>
-            <ul>${tips.map(t => `<li>${t}</li>`).join('')}</ul>
+            <ul>${tips.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>
         </div>`;
     }
     html += '<div class="plan-days">';
@@ -4934,8 +6723,8 @@ function renderWorkoutPlan(planObj) {
         const isRest = !d.exercises || d.exercises.length === 0 || /rest|พัก/i.test(d.focus || '');
         html += `<div class="plan-day ${isRest ? 'rest' : ''}">
             <div class="plan-day-header">
-                <div class="plan-day-name">${d.day || ''}</div>
-                <div class="plan-day-focus">${d.focus || ''}</div>
+                <div class="plan-day-name">${escapeHtml(d.day || '')}</div>
+                <div class="plan-day-focus">${escapeHtml(d.focus || '')}</div>
             </div>`;
         if (isRest) {
             html += `<div class="plan-rest-msg">💤 พักผ่อน / Active Recovery</div>`;
@@ -4943,9 +6732,9 @@ function renderWorkoutPlan(planObj) {
             html += '<div class="plan-exercise-list">';
             (d.exercises || []).forEach(ex => {
                 html += `<div class="plan-exercise">
-                    <div class="plan-exercise-name">${ex.name}</div>
-                    <div class="plan-exercise-meta">${ex.sets ? ex.sets + ' sets' : ''} ${ex.reps ? '× ' + ex.reps : ''}</div>
-                    ${ex.note ? `<div class="plan-exercise-note">${ex.note}</div>` : ''}
+                    <div class="plan-exercise-name">${escapeHtml(ex.name)}</div>
+                    <div class="plan-exercise-meta">${ex.sets ? (+ex.sets || 0) + ' sets' : ''} ${ex.reps ? '× ' + escapeHtml(ex.reps) : ''}</div>
+                    ${ex.note ? `<div class="plan-exercise-note">${escapeHtml(ex.note)}</div>` : ''}
                 </div>`;
             });
             html += '</div>';
@@ -5078,6 +6867,726 @@ function updateSyncStatus() {
     }
 }
 
+/* ============================================================
+   ✦ Training — AI Quick Logger
+   ============================================================ */
+
+// Local heuristic for parsing exercise text → calories
+function parseExerciseText(text, sport, mets, weightKg) {
+    text = (text || '').trim();
+    weightKg = weightKg || 65;
+    let duration = null;   // minutes
+    let distance = null;   // km
+    let pace = null;       // min/km
+    let intensityMult = 1.0;
+
+    // Distance parsing — "5 km", "10km", "3.5 กม", "100 m" (treats >= 50 as meters→km)
+    const kmM = text.match(/(\d+(?:\.\d+)?)\s*(?:km|กม|กิโล)/i);
+    if (kmM) distance = parseFloat(kmM[1]);
+    if (!distance) {
+        const mM = text.match(/(\d+(?:\.\d+)?)\s*(?:m|เมตร)\b/i);
+        if (mM) {
+            const meters = parseFloat(mM[1]);
+            if (meters >= 50) distance = meters / 1000;
+        }
+    }
+
+    // Duration parsing — "45 min", "30 นาที", "1 hr", "1:30:00"
+    const minM = text.match(/(\d+(?:\.\d+)?)\s*(?:min|นาที|นที|m\b)/i);
+    if (minM) duration = parseFloat(minM[1]);
+    const hrM = text.match(/(\d+(?:\.\d+)?)\s*(?:hr|ชั่วโมง|ชม)/i);
+    if (hrM) duration = (duration || 0) + parseFloat(hrM[1]) * 60;
+
+    // Pace parsing
+    //   mm:ss form e.g. "pace 6:30" → 6 min 30 sec = 6.5 min/km
+    //   mm.ss form (2-digit seconds) e.g. "pace 6.30" → 6 min 30 sec = 6.5
+    //   decimal form e.g. "pace 6.5" → 6.5 min/km directly
+    let paceMatched = false;
+    const paceColon = text.match(/(?:pace|เพซ|เพส)\s*(\d+):(\d{1,2})/i);
+    if (paceColon) {
+        pace = parseFloat(paceColon[1]) + parseFloat(paceColon[2]) / 60;
+        paceMatched = true;
+    }
+    if (!paceMatched) {
+        const paceDot = text.match(/(?:pace|เพซ|เพส)\s*(\d+)\.(\d{2})\b/i);
+        if (paceDot) {
+            // Two-digit decimal after pace = minute.second (e.g. 6.30 = 6:30)
+            pace = parseFloat(paceDot[1]) + parseFloat(paceDot[2]) / 60;
+            paceMatched = true;
+        }
+    }
+    if (!paceMatched) {
+        const paceDecimal = text.match(/(?:pace|เพซ|เพส)\s*(\d+(?:\.\d+)?)/i);
+        if (paceDecimal) pace = parseFloat(paceDecimal[1]);  // 6.5 → 6.5 min/km
+    }
+
+    // If we have distance + pace but no duration → compute it
+    if (distance && pace && !duration) duration = distance * pace;
+    // If we have distance + duration but no pace
+    if (distance && duration && !pace) pace = duration / distance;
+    // If only distance + walking/running and no pace/duration → assume defaults
+    if (distance && !duration && !pace) {
+        const defaultPace = /วิ่ง|run/i.test(sport || text) ? 6.5
+            : /เดิน|walk/i.test(sport || text) ? 12
+            : /ปั่น|bike|cycle/i.test(sport || text) ? 3.0 // min/km for cycling
+            : 8;
+        pace = defaultPace;
+        duration = distance * defaultPace;
+    }
+
+    // METs adjustment based on pace (running) — pace already encodes intensity
+    let effectiveMets = parseFloat(mets) || 7;
+    let paceAdjustedMets = false;
+    if (/วิ่ง|run/i.test(sport) && pace) {
+        if (pace < 4.0)      effectiveMets = 16;
+        else if (pace < 5.0) effectiveMets = 12.5;
+        else if (pace < 6.0) effectiveMets = 10;
+        else if (pace < 7.5) effectiveMets = 8.3;
+        else                 effectiveMets = 6;
+        paceAdjustedMets = true;
+    } else if (/ปั่น|bike|cycle/i.test(sport) && pace) {
+        const kph = 60 / pace;
+        if (kph > 25)      effectiveMets = 10;
+        else if (kph > 20) effectiveMets = 8;
+        else if (kph > 15) effectiveMets = 6;
+        else               effectiveMets = 4;
+        paceAdjustedMets = true;
+    }
+
+    // Intensity adjustments — only apply if pace didn't already encode intensity
+    if (!paceAdjustedMets) {
+        if (/เบาๆ|easy|สบายๆ|ช้าๆ/i.test(text)) intensityMult *= 0.85;
+        if (/หนัก|heavy|intense|เร็ว|fast|sprint/i.test(text)) intensityMult *= 1.2;
+        if (/HIIT|interval/i.test(text)) intensityMult *= 1.35;
+    }
+    // Hard cap to prevent any compounding from going beyond human capacity
+    intensityMult = Math.min(1.5, Math.max(0.7, intensityMult));
+    effectiveMets = Math.min(20, effectiveMets);
+
+    if (!duration) duration = 30; // fallback
+
+    const calories = Math.round(effectiveMets * weightKg * (duration / 60) * intensityMult);
+
+    // Build analysis string
+    let analysis = '';
+    if (distance && pace) {
+        const paceStr = `${Math.floor(pace)}:${String(Math.round((pace % 1) * 60)).padStart(2, '0')}`;
+        if (/วิ่ง|run/i.test(sport)) {
+            if (pace < 5) analysis = `⚡ pace ${paceStr}/km — เร็วมาก เกือบ tempo run`;
+            else if (pace < 6.5) analysis = `🏃 pace ${paceStr}/km — moderate run`;
+            else analysis = `🌿 pace ${paceStr}/km — easy run / Zone 2`;
+        } else analysis = `📊 ${distance.toFixed(2)} km @ ${paceStr} เฉลี่ย`;
+    } else if (duration) {
+        if (duration < 20) analysis = '⚡ เซ็ตสั้นๆ — ดีสำหรับ active recovery';
+        else if (duration < 45) analysis = '🔥 ระยะเวลามาตรฐาน — กระชับและเหมาะกับทุกระดับ';
+        else analysis = '🏆 ระยะเวลายาว — เน้น endurance';
+    }
+    if (intensityMult > 1.1) analysis += ' · ความหนักสูง';
+    if (intensityMult < 1) analysis += ' · ความหนักเบา';
+
+    return {
+        sport: sport || 'อื่นๆ',
+        duration: Math.round(duration),
+        distance: distance ? +distance.toFixed(2) : null,
+        pace: pace ? +pace.toFixed(2) : null,
+        mets: +effectiveMets.toFixed(1),
+        calories,
+        analysis: analysis || 'บันทึกการฝึกซ้อมแล้ว'
+    };
+}
+
+let _lastTrainingResult = null;
+
+function setupTraining() {
+    if (!$('#trAnalyzeBtn')) return;
+
+    // Sport pill selection
+    $$('.sport-pill').forEach(btn => btn.addEventListener('click', () => {
+        $$('.sport-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if ($('#trSport')) $('#trSport').value = btn.dataset.sport;
+        if ($('#trMets')) $('#trMets').value = btn.dataset.mets;
+    }));
+
+    // Example chips fill input
+    $$('.te-chip').forEach(c => c.addEventListener('click', () => {
+        $('#trInput').value = c.dataset.fill;
+        $('#trInput').focus();
+    }));
+
+    // Analyze button
+    $('#trAnalyzeBtn').addEventListener('click', async () => {
+        const desc = $('#trInput').value.trim();
+        const note = $('#trNote').value.trim();
+        if (!desc && !note) { toast('พิมพ์อะไรซักอย่างก่อน เช่น "วิ่ง 5km pace 6.30"', 'error'); return; }
+
+        const btn = $('#trAnalyzeBtn');
+        const cooking = $('#trCooking');
+        const stepEl = $('#trCookingStep');
+        const title = $('#trResult .ai-result-title');
+        const statusEl = $('#trStatusBadge');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="ai-spinner"><i></i></span><span class="ai-btn-text">AI กำลังคิด…</span>';
+        cooking.classList.add('show');
+        const steps = ['ตีความกีฬา…', 'แตกค่าระยะทาง/เวลา/เพซ…', 'คำนวณ METs…', 'ประเมินพลังงาน…'];
+        let si = 0;
+        stepEl.textContent = steps[0];
+        const t = setInterval(() => { si = (si + 1) % steps.length; stepEl.textContent = steps[si]; }, 750);
+
+        // Get weight from latest body record (sorted by date) or default
+        const wRec = Storage.getAll('weight')
+            .slice()
+            .sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+        const wKg = wRec ? +wRec.weight : 65;
+        const sport = $('#trSport').value;
+        const mets = $('#trMets').value;
+
+        try {
+            let result;
+            let source = 'local';
+            if (Storage.config.sheetUrl) {
+                try {
+                    const res = await Storage.aiExercise({
+                        description: desc,
+                        note: note,
+                        sport: sport,
+                        weightKg: wKg
+                    });
+                    result = res.estimate || res.data || res;
+                    source = 'groq';
+                } catch (err) {
+                    console.warn('Groq aiExercise failed, falling back to local:', err);
+                    result = parseExerciseText(desc + ' ' + note, sport, mets, wKg);
+                }
+            } else {
+                result = parseExerciseText(desc + ' ' + note, sport, mets, wKg);
+            }
+
+            if (!result) throw new Error('No result');
+            _lastTrainingResult = result;
+
+            if (title) title.textContent = source === 'groq' ? 'Training Analysis ⚡ Groq AI' : 'Training Analysis ⚡ Local';
+            if (statusEl) statusEl.textContent = 'COMPLETE';
+
+            $('#trResult').classList.add('show');
+            $('#trResCal').textContent  = result.calories;
+            $('#trResDur').textContent  = result.duration;
+            $('#trResDist').textContent = result.distance || '—';
+            if (result.pace) {
+                const m = Math.floor(result.pace);
+                const s = String(Math.round((result.pace % 1) * 60)).padStart(2, '0');
+                $('#trResPace').textContent = `${m}:${s}`;
+                $('#trResPaceUnit').textContent = '/km';
+            } else {
+                $('#trResPace').textContent = result.mets;
+                $('#trResPaceUnit').textContent = 'METs';
+            }
+            $('#trResNote').textContent = result.analysis;
+        } catch (err) {
+            toast('คำนวณล้มเหลว: ' + err.message, 'error');
+        } finally {
+            clearInterval(t);
+            cooking.classList.remove('show');
+            btn.disabled = false;
+            btn.innerHTML = '<span class="ai-btn-text">✦ ให้ AI คำนวณแคลอรี่</span>';
+        }
+    });
+
+    // Save
+    $('#trSaveBtn').addEventListener('click', () => {
+        if (!_lastTrainingResult) return;
+        const r = _lastTrainingResult;
+        Storage.add('exercise', {
+            date: todayISO(),
+            exType: r.sport,
+            duration: r.duration,
+            distance: r.distance,
+            calories: r.calories,
+            note: ($('#trInput').value + ' ' + $('#trNote').value).trim() || `${r.sport}${r.distance ? ' ' + r.distance + 'km' : ''}`
+        });
+        toast(`บันทึก ${r.sport} ${r.calories} kcal สำเร็จ`, 'success');
+        $('#trInput').value = '';
+        $('#trNote').value = '';
+        $('#trResult').classList.remove('show');
+        _lastTrainingResult = null;
+        renderTrainingSnapshot();
+        renderExercise();
+    });
+
+    $('#trDiscardBtn').addEventListener('click', () => {
+        $('#trResult').classList.remove('show');
+        _lastTrainingResult = null;
+    });
+}
+
+function renderTrainingSnapshot() {
+    const last7 = getLast7Days();
+    const exs = Storage.getAll('exercise').filter(x => last7.includes(x.date));
+    const cal = exs.reduce((s, x) => s + (+x.calories || 0), 0);
+    const min = exs.reduce((s, x) => s + (+x.duration || 0), 0);
+    const km  = exs.reduce((s, x) => s + (+x.distance || 0), 0);
+    if ($('#trWeekCal')) $('#trWeekCal').textContent = cal.toLocaleString();
+    if ($('#trWeekMin')) $('#trWeekMin').textContent = min;
+    if ($('#trWeekKm'))  $('#trWeekKm').textContent  = km > 0 ? km.toFixed(1) : '0';
+
+    // Streak
+    let streak = 0;
+    const days = getLast7Days();
+    for (let i = days.length - 1; i >= 0; i--) {
+        if (exs.some(x => x.date === days[i])) streak++;
+        else break;
+    }
+    if ($('#trStreak')) $('#trStreak').textContent = streak;
+}
+
+/* ============================================================
+   ✦ Body — BMI + Body Fat Calculator
+   ============================================================ */
+
+function calcBodyFat(sex, heightCm, neckCm, waistCm, hipCm) {
+    if (!heightCm || !neckCm || !waistCm) return null;
+    if (sex === 'F' && !hipCm) return null;
+    try {
+        let bf;
+        if (sex === 'M') {
+            bf = 495 / (1.0324 - 0.19077 * Math.log10(waistCm - neckCm) + 0.15456 * Math.log10(heightCm)) - 450;
+        } else {
+            bf = 495 / (1.29579 - 0.35004 * Math.log10(waistCm + hipCm - neckCm) + 0.22100 * Math.log10(heightCm)) - 450;
+        }
+        if (!isFinite(bf) || bf < 2 || bf > 60) return null;
+        return +bf.toFixed(1);
+    } catch (e) { return null; }
+}
+
+function bodyFatCategory(bf, sex) {
+    if (bf == null) return '—';
+    if (sex === 'M') {
+        if (bf < 6)  return 'Essential · ต่ำมาก';
+        if (bf < 14) return 'Athlete · นักกีฬา';
+        if (bf < 18) return 'Fitness · ดี';
+        if (bf < 25) return 'Average · ปกติ';
+        return 'High · สูง';
+    } else {
+        if (bf < 14) return 'Essential · ต่ำมาก';
+        if (bf < 21) return 'Athlete · นักกีฬา';
+        if (bf < 25) return 'Fitness · ดี';
+        if (bf < 32) return 'Average · ปกติ';
+        return 'High · สูง';
+    }
+}
+
+function setBmiNeedle(bmi) {
+    if (bmi == null) return;
+    // Map BMI 15..40 → -90..+90 degrees
+    const clamped = Math.max(15, Math.min(40, bmi));
+    const deg = ((clamped - 15) / 25) * 180 - 90;
+    const el = $('#bmiNeedle');
+    if (el) el.style.transform = `rotate(${deg.toFixed(1)}deg)`;
+}
+
+function setBfNeedle(bf) {
+    if (bf == null) return;
+    // Map BF 5..40 → -90..+90 degrees
+    const clamped = Math.max(5, Math.min(40, bf));
+    const deg = ((clamped - 5) / 35) * 180 - 90;
+    const el = $('#bfNeedle');
+    if (el) el.style.transform = `rotate(${deg.toFixed(1)}deg)`;
+}
+
+function setupBody() {
+    if (!$('#bodyCalcBtn')) return;
+
+    // Sex toggle
+    $$('.sex-btn').forEach(btn => btn.addEventListener('click', () => {
+        $$('.sex-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const sex = btn.dataset.sex;
+        $('#bHipRow').style.display = sex === 'F' ? 'flex' : 'none';
+    }));
+
+    // Pre-fill from saved bodyStats
+    const saved = Storage.config.bodyStats || {};
+    if (saved.sex) {
+        $$('.sex-btn').forEach(b => b.classList.toggle('active', b.dataset.sex === saved.sex));
+        $('#bHipRow').style.display = saved.sex === 'F' ? 'flex' : 'none';
+    }
+    if (saved.age) $('#bAge').value = saved.age;
+    if (saved.height) $('#bHeight').value = saved.height;
+    if (saved.weight) $('#bWeight').value = saved.weight;
+    if (saved.neck) $('#bNeck').value = saved.neck;
+    if (saved.waist) $('#bWaist').value = saved.waist;
+    if (saved.hip) $('#bHip').value = saved.hip;
+
+    // Initial display from saved values
+    if (saved.bmi != null) {
+        $('#bmiValue').textContent = saved.bmi;
+        $('#bmiCat').textContent = bmiCategory(saved.bmi).label;
+        setBmiNeedle(saved.bmi);
+    }
+    if (saved.bodyFat != null) {
+        $('#bfValue').textContent = saved.bodyFat + '%';
+        $('#bfCat').textContent = bodyFatCategory(saved.bodyFat, saved.sex);
+        setBfNeedle(saved.bodyFat);
+    }
+    if (saved.leanMass != null) $('#leanMass').textContent = saved.leanMass.toFixed(1);
+    if (saved.fatMass != null)  $('#fatMass').textContent = saved.fatMass.toFixed(1);
+    if (saved.ideal != null)    $('#idealWeight').textContent = saved.ideal.toFixed(1);
+    if (saved.whRatio != null)  $('#whRatio').textContent = saved.whRatio.toFixed(2);
+    if (saved.whRisk)           $('#whRisk').textContent = saved.whRisk;
+
+    // Calculate button
+    $('#bodyCalcBtn').addEventListener('click', () => {
+        const sex = ($$('.sex-btn').find(b => b.classList.contains('active')) || {}).dataset?.sex || 'M';
+        const age = +$('#bAge').value || 25;
+        const height = +$('#bHeight').value;
+        const weight = +$('#bWeight').value;
+        const neck = +$('#bNeck').value;
+        const waist = +$('#bWaist').value;
+        const hip = +$('#bHip').value;
+
+        if (!height || !weight) { toast('กรุณาใส่ส่วนสูงและน้ำหนัก', 'error'); return; }
+
+        const btn = $('#bodyCalcBtn');
+        const cooking = $('#bodyCooking');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="ai-spinner"><i></i></span><span class="ai-btn-text">กำลังคำนวณ…</span>';
+        cooking.classList.add('show');
+
+        setTimeout(() => {
+            const bmi = calcBMI(weight, height);
+            const bf = (neck && waist && (sex === 'M' || hip)) ? calcBodyFat(sex, height, neck, waist, hip) : null;
+            const fatMass = bf ? +(weight * bf / 100).toFixed(1) : null;
+            const leanMass = bf ? +(weight - fatMass).toFixed(1) : null;
+            const ideal = +((height / 100) ** 2 * 22).toFixed(1);
+            const whRatio = waist ? +(waist / height).toFixed(2) : null;
+            let whRisk = '—';
+            if (whRatio) {
+                if (whRatio < 0.43) whRisk = '⚠ ผอมเกินไป';
+                else if (whRatio < 0.5) whRisk = '✓ Healthy';
+                else if (whRatio < 0.57) whRisk = '⚠ Caution';
+                else whRisk = '🔴 High risk';
+            }
+
+            // Update gauges
+            $('#bmiValue').textContent = bmi || '--';
+            $('#bmiCat').textContent = bmi ? bmiCategory(bmi).label : '—';
+            setBmiNeedle(bmi);
+
+            $('#bfValue').textContent = bf != null ? bf + '%' : '--';
+            $('#bfCat').textContent = bf != null ? bodyFatCategory(bf, sex) : 'ใส่รอบคอ/เอว/สะโพก';
+            setBfNeedle(bf);
+
+            $('#leanMass').textContent = leanMass != null ? leanMass.toFixed(1) : '--';
+            $('#fatMass').textContent  = fatMass != null ? fatMass.toFixed(1) : '--';
+            $('#idealWeight').textContent = ideal;
+            $('#whRatio').textContent = whRatio != null ? whRatio.toFixed(2) : '--';
+            $('#whRisk').textContent = whRisk;
+
+            // Save to config
+            Storage.config.bodyStats = { sex, age, height, weight, neck, waist, hip, bmi, bodyFat: bf, fatMass, leanMass, ideal, whRatio, whRisk };
+            Storage.saveConfig();
+
+            // Also add to weight history if first record today
+            const today = todayISO();
+            const todayWeights = Storage.getAll('weight').filter(w => w.date === today);
+            if (todayWeights.length === 0) {
+                Storage.add('weight', { date: today, weight, height, note: 'จาก Body Calculator' });
+            }
+
+            toast(`BMI ${bmi}${bf != null ? ' · Body Fat ' + bf + '%' : ''}`, 'success');
+            renderWeight();
+
+            btn.disabled = false;
+            btn.innerHTML = '<span class="ai-btn-text">✦ คำนวณ & บันทึก</span>';
+            cooking.classList.remove('show');
+        }, 1100);
+    });
+}
+
+/* ----- Body Measurements (modal) ----- */
+function renderMeasurements() {
+    const map = Storage.config.measurements || {};
+    const list = ['neck','chest','waist','hip','bicep','thigh','calf'];
+    const labels = { neck: 'รอบคอ', chest: 'รอบอก', waist: 'รอบเอว', hip: 'รอบสะโพก', bicep: 'รอบแขน', thigh: 'รอบต้นขา', calf: 'รอบน่อง' };
+    const cont = $('#bmList');
+    if (!cont) return;
+    cont.innerHTML = list.map(k => {
+        const v = map[k];
+        return `<div class="bm-list-item" data-part="${k}">
+            <span class="bm-li-name">${labels[k]}</span>
+            <span class="bm-li-val">${v != null ? v + '<span class="unit">cm</span>' : '<span class="bm-li-empty">— ยังไม่ได้วัด</span>'}</span>
+        </div>`;
+    }).join('');
+    // Color dots that have values
+    $$('.bm-dot').forEach(d => {
+        d.classList.toggle('has-value', map[d.dataset.part] != null);
+    });
+}
+
+function setupMeasurements() {
+    if (!$('#bmList')) return;
+    renderMeasurements();
+
+    const modal = $('#bmModal');
+    const titleEl = $('#bmModalTitle');
+    const input = $('#bmInput');
+    let currentPart = null;
+
+    const open = (part, label) => {
+        currentPart = part;
+        titleEl.textContent = label;
+        const v = (Storage.config.measurements || {})[part];
+        input.value = v != null ? v : '';
+        modal.hidden = false;
+        setTimeout(() => input.focus(), 50);
+    };
+    const close = () => { modal.hidden = true; currentPart = null; };
+
+    // Dots open modal
+    $$('.bm-dot').forEach(d => {
+        d.addEventListener('click', () => open(d.dataset.part, d.dataset.label));
+        d.addEventListener('keydown', (e) => { if (e.key === 'Enter') open(d.dataset.part, d.dataset.label); });
+    });
+    // List items also open
+    document.addEventListener('click', (e) => {
+        const item = e.target.closest('.bm-list-item');
+        if (item && $('#bmList').contains(item)) {
+            const part = item.dataset.part;
+            const labels = { neck: 'รอบคอ', chest: 'รอบอก', waist: 'รอบเอว', hip: 'รอบสะโพก', bicep: 'รอบแขน', thigh: 'รอบต้นขา', calf: 'รอบน่อง' };
+            open(part, labels[part] || part);
+        }
+    });
+
+    $$('[data-close]').forEach(b => b.addEventListener('click', close));
+    $('#bmSaveBtn').addEventListener('click', () => {
+        if (!currentPart) return;
+        const v = parseFloat(input.value);
+        if (!isFinite(v) || v <= 0) { toast('ใส่ค่าให้ถูกต้อง', 'error'); return; }
+        Storage.config.measurements = Storage.config.measurements || {};
+        Storage.config.measurements[currentPart] = +v.toFixed(1);
+        Storage.saveConfig();
+        renderMeasurements();
+        toast(`บันทึก ${titleEl.textContent} = ${v} cm`, 'success');
+        close();
+    });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#bmSaveBtn').click(); });
+
+    // ESC anywhere closes modal
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.hidden) close();
+    });
+}
+
+/* ============================================================
+   ✦ Recovery Score (AI heuristic)
+   ============================================================ */
+
+const recState = { quality: 'ดี', intensity: 'rest' };
+
+function calcRecoveryScore() {
+    const sleep    = +$('#recSleep').value;
+    const water    = +$('#recWater').value;
+    const hr       = +$('#recHr').value;
+    const sore     = +$('#recSore').value;
+    const quality  = recState.quality;
+    const intensity = recState.intensity;
+
+    // Sleep score (0-30) — peaks at 7-9h, gentle drop-off either side
+    let sleepScore;
+    if      (sleep >= 7 && sleep <= 9)  sleepScore = 30;
+    else if (sleep >= 6 && sleep < 7)   sleepScore = 22;
+    else if (sleep > 9  && sleep <= 11) sleepScore = 24;  // mild oversleep
+    else if (sleep > 11)                sleepScore = 16;  // heavy oversleep
+    else if (sleep >= 5)                sleepScore = 14;
+    else if (sleep >= 4)                sleepScore = 9;
+    else                                sleepScore = 4;
+
+    // Quality bonus (0-15)
+    const qBonus = { 'ดีมาก': 15, 'ดี': 11, 'ปานกลาง': 6, 'แย่': 2 }[quality] || 8;
+
+    // Water score (0-15) — linear up to 100%, full credit above
+    const waterScore = Math.min(15, Math.max(0, (water / 100) * 15));
+
+    // HR score (0-15) — lower resting HR = better
+    let hrScore;
+    if (hr <= 55)      hrScore = 15;
+    else if (hr <= 65) hrScore = 12;
+    else if (hr <= 75) hrScore = 9;
+    else if (hr <= 85) hrScore = 5;
+    else               hrScore = 2;
+
+    // Soreness penalty (0-15 negative)
+    const sorePenalty = sore * 3; // up to 15
+
+    // Intensity yesterday: rest = full credit, heavy = needs rest
+    const intensityFactor = { rest: 25, light: 20, moderate: 14, heavy: 8 }[intensity] ?? 15;
+
+    let score = sleepScore + qBonus + waterScore + hrScore + intensityFactor - sorePenalty;
+    score = Math.round(Math.max(0, Math.min(100, score)));
+
+    // Status + tip
+    let status, summary, glow;
+    if (score >= 85) {
+        status = 'PRIMED 🟢';
+        glow = 'rgba(52, 211, 153, 0.8)';
+        summary = 'ร่างกายฟื้นตัวเต็มที่ — วันนี้พุชหนักได้ ออกกำลังกายระดับสูงหรือเล่นเวทหนักได้สบาย';
+    } else if (score >= 70) {
+        status = 'READY 🔵';
+        glow = 'rgba(34, 211, 238, 0.8)';
+        summary = 'ฟื้นตัวดี — เทรนระดับปานกลาง-สูงได้ ระวังอย่าเกินกำลัง ฟังร่างกายระหว่างเซ็ต';
+    } else if (score >= 50) {
+        status = 'MAINTAIN 🟣';
+        glow = 'rgba(192, 132, 252, 0.8)';
+        summary = 'ฟื้นตัวปานกลาง — เน้นเทรนเบาถึงกลาง เน้นเทคนิคแทนน้ำหนัก ดื่มน้ำให้พอ';
+    } else if (score >= 30) {
+        status = 'CAUTION 🟡';
+        glow = 'rgba(251, 191, 36, 0.8)';
+        summary = 'ฟื้นตัวต่ำ — แนะนำให้พักหรือทำ active recovery (เดิน/ยืดเหยียด/โยคะ) นอนให้พอคืนนี้';
+    } else {
+        status = 'REST 🔴';
+        glow = 'rgba(248, 113, 113, 0.8)';
+        summary = 'ร่างกายล้ามาก — ควรพักเต็มวัน เพิ่มชั่วโมงนอน ดื่มน้ำเพิ่ม กินโปรตีนคุณภาพ';
+    }
+
+    // Factors
+    const factors = [];
+    if (sleepScore >= 26) factors.push({ text: '😴 นอน ' + sleep + 'h ดี', cls: 'good' });
+    else if (sleepScore < 18) factors.push({ text: '⚠ นอน ' + sleep + 'h น้อย', cls: 'bad' });
+    if (qBonus >= 11) factors.push({ text: '💤 คุณภาพการนอน ' + quality, cls: 'good' });
+    else if (qBonus < 6) factors.push({ text: '💤 คุณภาพ ' + quality, cls: 'bad' });
+    if (waterScore >= 11) factors.push({ text: '💧 ดื่มน้ำ ' + water + '%', cls: 'good' });
+    else if (waterScore < 7) factors.push({ text: '💧 น้ำน้อย ' + water + '%', cls: 'bad' });
+    if (hrScore >= 12) factors.push({ text: '❤️ HR ต่ำ ' + hr + ' bpm', cls: 'good' });
+    else if (hrScore < 7) factors.push({ text: '❤️ HR สูง ' + hr + ' bpm', cls: 'bad' });
+    if (sore <= 1) factors.push({ text: '💪 กล้ามไม่เจ็บ', cls: 'good' });
+    else if (sore >= 4) factors.push({ text: '💪 ปวดกล้าม ' + sore + '/5', cls: 'bad' });
+    if (intensity === 'rest') factors.push({ text: '😌 พักเมื่อวาน', cls: 'good' });
+    if (intensity === 'heavy') factors.push({ text: '🔥 เทรนหนักเมื่อวาน', cls: 'bad' });
+
+    return { score, status, summary, glow, factors };
+}
+
+function renderRecoveryScore(scoreObj) {
+    const { score, status, summary, glow, factors } = scoreObj;
+    $('#recScore').textContent = score;
+    $('#recStatus').textContent = status;
+    $('#recSummary').textContent = summary;
+    document.documentElement.style.setProperty('--rec-glow', glow);
+    $('#recScore').style.setProperty('--rec-glow', glow);
+
+    const circumference = 603.2; // 2π × 96
+    $('#recRing').setAttribute('stroke-dashoffset', circumference * (1 - score / 100));
+
+    $('#recFactors').innerHTML = factors.map(f => `<span class="rec-factor ${f.cls}">${escapeHtml(f.text)}</span>`).join('');
+}
+
+function renderRecoveryHistory() {
+    const cont = $('#recHistory');
+    if (!cont) return;
+    const history = Storage.config.recoveryHistory || [];
+    const days = getLast7Days();
+    const dayNames = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+    const html = days.map(d => {
+        const rec = history.find(r => r.date === d);
+        const sc = rec ? rec.score : 0;
+        const date = new Date(d + 'T00:00:00');
+        return `<div class="rec-bar">
+            <div class="rec-bar-track"><div class="rec-bar-fill" style="height:${sc}%"></div></div>
+            <div class="rec-bar-score">${rec ? sc : '—'}</div>
+            <div class="rec-bar-day">${dayNames[date.getDay()]} ${date.getDate()}</div>
+        </div>`;
+    }).join('');
+    cont.innerHTML = days.some(d => history.find(r => r.date === d)) ? html : '<div class="empty" style="grid-column: 1/-1">ยังไม่มีคะแนน — กดคำนวณด้านบนเพื่อบันทึกคะแนนแรก</div>';
+}
+
+function setupRecovery() {
+    if (!$('#recCalcBtn')) return;
+
+    // Slider live update
+    const bind = (id, out, suffix='') => {
+        const el = $('#' + id), o = $('#' + out);
+        if (!el || !o) return;
+        const update = () => { o.textContent = el.value + suffix; };
+        el.addEventListener('input', update);
+        update();
+    };
+    bind('recSleep', 'recSleepVal');
+    bind('recWater', 'recWaterVal');
+    bind('recHr',    'recHrVal');
+    bind('recSore',  'recSoreVal');
+
+    // Quality pill
+    $$('#recQualityPills .rec-pill').forEach(btn => btn.addEventListener('click', () => {
+        $$('#recQualityPills .rec-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        recState.quality = btn.dataset.q;
+    }));
+    // Intensity pill
+    $$('#recIntensityPills .rec-pill').forEach(btn => btn.addEventListener('click', () => {
+        $$('#recIntensityPills .rec-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        recState.intensity = btn.dataset.i;
+    }));
+
+    // Calculate
+    $('#recCalcBtn').addEventListener('click', () => {
+        const btn = $('#recCalcBtn');
+        const cooking = $('#recCooking');
+        const stepEl = $('#recCookingStep');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="ai-spinner"><i></i></span><span class="ai-btn-text">กำลังประมวลผล…</span>';
+        cooking.classList.add('show');
+        const steps = ['ตรวจคุณภาพการนอน…', 'ประเมินความเหนื่อย…', 'คำนวณคะแนน…', 'สร้างคำแนะนำ…'];
+        let si = 0;
+        stepEl.textContent = steps[0];
+        const t = setInterval(() => { si = (si + 1) % steps.length; stepEl.textContent = steps[si]; }, 700);
+
+        setTimeout(() => {
+            const result = calcRecoveryScore();
+            renderRecoveryScore(result);
+
+            // Save to history (one per day, overwrite)
+            const today = todayISO();
+            const history = Storage.config.recoveryHistory || [];
+            const filtered = history.filter(r => r.date !== today);
+            filtered.push({ date: today, score: result.score, status: result.status });
+            Storage.config.recoveryHistory = filtered.slice(-30);
+            Storage.saveConfig();
+            renderRecoveryHistory();
+
+            // Also save sleep entry if not present
+            const sleepEntry = Storage.getAll('sleep').find(s => s.date === today);
+            if (!sleepEntry) {
+                Storage.add('sleep', { date: today, hours: +$('#recSleep').value, quality: recState.quality });
+            }
+
+            clearInterval(t);
+            cooking.classList.remove('show');
+            btn.disabled = false;
+            btn.innerHTML = '<span class="ai-btn-text">✦ คำนวณ Recovery Score</span>';
+            toast(`Recovery: ${result.score}/100 — ${result.status}`, 'success');
+        }, 1400);
+    });
+
+    // Initial render
+    renderRecoveryHistory();
+
+    // Pre-fill from latest sleep (sorted by date)
+    const latestSleep = Storage.getAll('sleep')
+        .slice()
+        .sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+    if (latestSleep) {
+        if ($('#recSleep')) { $('#recSleep').value = latestSleep.hours; $('#recSleepVal').textContent = latestSleep.hours; }
+        const qBtn = $$('#recQualityPills .rec-pill').find(b => b.dataset.q === latestSleep.quality);
+        if (qBtn) { $$('#recQualityPills .rec-pill').forEach(b => b.classList.remove('active')); qBtn.classList.add('active'); recState.quality = latestSleep.quality; }
+    }
+
+    // Pre-fill water % from today
+    const todayWater = Storage.getAll('water').filter(w => w.date === todayISO()).reduce((s, w) => s + (+w.amount || 0), 0);
+    const pct = Math.round((todayWater / (Storage.config.goalWater || 2000)) * 100);
+    if ($('#recWater') && pct > 0) { $('#recWater').value = Math.min(150, pct); $('#recWaterVal').textContent = Math.min(150, pct); }
+}
+
 // ----- Event handlers -----
 function initEvents() {
     // Nav
@@ -5119,27 +7628,29 @@ function initEvents() {
     // Set default date for food form (hidden input)
     if ($('#foodDate')) $('#foodDate').value = today;
 
-    // Save AI result → log a meal
+    // Save AI result → log a meal (read-only — uses AI result directly)
     $('#saveAiBtn').addEventListener('click', () => {
         if (!_lastAiResult) { toast('ยังไม่มีผลวิเคราะห์', 'error'); return; }
-        const name = $('#foodName').value.trim() || (_lastAiResult.items || []).join(', ') || 'AI Meal';
+        const name = $('#foodName').value.trim()
+            || (_lastAiResult.items || []).join(', ')
+            || 'AI Meal';
         Storage.add('food', {
-            date: $('#foodDate').value || today,
+            date: todayISO(),  // always use fresh local-tz date
             meal: $('#foodMeal').value || 'เช้า',
             name,
             amount: '',
             note: $('#foodNote').value.trim(),
-            calories: _lastAiResult.calories,
-            protein: _lastAiResult.protein || 0,
-            carbs: _lastAiResult.carbs || 0,
-            fat: _lastAiResult.fat || 0
+            calories: Math.round(_lastAiResult.calories || 0),
+            protein:  +(+(_lastAiResult.protein || 0)).toFixed(1),
+            carbs:    +(+(_lastAiResult.carbs   || 0)).toFixed(1),
+            fat:      +(+(_lastAiResult.fat     || 0)).toFixed(1)
         });
         $('#foodName').value = '';
         $('#foodNote').value = '';
         $('#aiBox').classList.remove('show');
         clearPhoto();
         _lastAiResult = null;
-        toast('บันทึกมื้อนี้แล้ว — ' + _lastAiResult_meta(), 'success');
+        toast('บันทึกมื้อนี้แล้ว', 'success');
         renderFood();
         renderDashboard();
     });
@@ -5149,10 +7660,6 @@ function initEvents() {
         $('#aiBox').classList.remove('show');
         _lastAiResult = null;
     });
-
-    function _lastAiResult_meta() {
-        return 'XP +' + 15;
-    }
 
     // ===== Photo handling =====
     let _currentPhoto = null;        // base64 string (no prefix)
@@ -5201,8 +7708,8 @@ function initEvents() {
         const note = ($('#foodNote') && $('#foodNote').value || '').trim();
         const hasPhoto = !!_currentPhoto;
 
-        if (!desc && !hasPhoto) {
-            toast('ใส่ชื่ออาหาร หรือถ่ายรูปก่อน', 'error');
+        if (!desc && !note && !hasPhoto) {
+            toast('ใส่ชื่ออาหาร / รายละเอียด หรือถ่ายรูปก่อน', 'error');
             return;
         }
 
@@ -5210,8 +7717,21 @@ function initEvents() {
         const box = $('#aiBox');
         const title = $('#aiBoxTitle');
         const status = $('#aiStatusBadge');
+        const cooking = $('#aiCooking');
+        const cookingStep = $('#aiCookingStep');
         btn.disabled = true;
-        btn.innerHTML = '<span class="ai-loading"></span> AI กำลังวิเคราะห์...';
+        btn.innerHTML = '<span class="ai-spinner"><i></i></span><span class="ai-btn-text">AI กำลังคิด…</span>';
+        if (cooking) cooking.classList.add('show');
+        // cycle through cooking step messages
+        const steps = hasPhoto
+            ? ['สแกนภาพอาหาร…', 'ระบุส่วนประกอบ…', 'คำนวณแคลอรี่ & มาโคร…', 'ตรวจทานผลลัพธ์…']
+            : ['ตีความเมนู…', 'แตกส่วนผสม…', 'คำนวณแคลอรี่ & มาโคร…', 'ตรวจทานผลลัพธ์…'];
+        let stepIdx = 0;
+        if (cookingStep) cookingStep.textContent = steps[0];
+        const stepTimer = setInterval(() => {
+            stepIdx = (stepIdx + 1) % steps.length;
+            if (cookingStep) cookingStep.textContent = steps[stepIdx];
+        }, 900);
         box.classList.add('show');
         title.textContent = hasPhoto ? 'AI Vision Analysis' : 'AI Nutrition Analysis';
         if (status) status.textContent = 'PROCESSING';
@@ -5252,20 +7772,20 @@ function initEvents() {
 
             if (!result) throw new Error('No result');
             _lastAiResult = result;
-            $('#aiCal').textContent  = result.calories;
-            $('#aiPro').textContent  = (result.protein || 0) + 'g';
-            $('#aiCarb').textContent = (result.carbs || 0) + 'g';
-            $('#aiFat').textContent  = (result.fat || 0) + 'g';
+            $('#aiCal').textContent  = Math.round(result.calories || 0);
+            $('#aiPro').textContent  = (+(result.protein || 0).toFixed(1)) + 'g';
+            $('#aiCarb').textContent = (+(result.carbs || 0).toFixed(1)) + 'g';
+            $('#aiFat').textContent  = (+(result.fat || 0).toFixed(1)) + 'g';
             $('#aiText').textContent = result.analysis || result.ai_analysis || 'วิเคราะห์เสร็จสิ้น';
 
             // Show detected items as chips
             const items = result.items || result.detected || [];
             if (Array.isArray(items) && items.length) {
-                $('#aiDetected').innerHTML = items.slice(0, 8).map(x => `<span class="ai-detected-chip">${x}</span>`).join('');
+                $('#aiDetected').innerHTML = items.slice(0, 8).map(x => `<span class="ai-detected-chip">${escapeHtml(x)}</span>`).join('');
             }
             if (status) status.textContent = 'COMPLETE';
 
-            // Auto-fill foodName if empty
+            // Auto-fill foodName if empty (so save uses detected items as name)
             if (!$('#foodName').value.trim() && items && items.length) {
                 $('#foodName').value = items.join(', ');
             }
@@ -5275,7 +7795,9 @@ function initEvents() {
             toast('AI วิเคราะห์ล้มเหลว', 'error');
         } finally {
             btn.disabled = false;
-            btn.innerHTML = '✦ ให้ AI คำนวณโภชนาการให้';
+            btn.innerHTML = '<span class="ai-btn-text">✦ ให้ AI คำนวณแคลให้</span>';
+            clearInterval(stepTimer);
+            if (cooking) cooking.classList.remove('show');
         }
     });
 
@@ -5323,7 +7845,8 @@ function initEvents() {
         const today = todayISO();
         const foods = Storage.getAll('food').filter(x => x.date === today);
         const consumed = foods.reduce((s, x) => s + (+x.calories || 0), 0);
-        const remainingCal = Math.max(0, Storage.config.goalCalories - consumed);
+        const goalCal = +Storage.config.goalCalories || 2000;
+        const remainingCal = Math.max(0, goalCal - consumed);
         const list = $('#recipeList');
         const btn = $('#aiRecipeBtn');
         const remainingInfo = $('#recipeRemaining');
@@ -5354,19 +7877,19 @@ function initEvents() {
 
             list.innerHTML = recipes.map(r => `
                 <div class="recipe-item">
-                    <div class="recipe-name">${r.name}</div>
+                    <div class="recipe-name">${escapeHtml(r.name)}</div>
                     <div class="recipe-macros">
-                        <span class="recipe-macro-pill"><strong>${r.calories || 0}</strong> kcal</span>
-                        <span class="recipe-macro-pill">P <strong>${r.protein || 0}</strong>g</span>
-                        <span class="recipe-macro-pill">C <strong>${r.carbs || 0}</strong>g</span>
-                        <span class="recipe-macro-pill">F <strong>${r.fat || 0}</strong>g</span>
+                        <span class="recipe-macro-pill"><strong>${+r.calories || 0}</strong> kcal</span>
+                        <span class="recipe-macro-pill">P <strong>${+r.protein || 0}</strong>g</span>
+                        <span class="recipe-macro-pill">C <strong>${+r.carbs || 0}</strong>g</span>
+                        <span class="recipe-macro-pill">F <strong>${+r.fat || 0}</strong>g</span>
                     </div>
-                    <div class="recipe-desc">${r.desc || ''}</div>
+                    <div class="recipe-desc">${escapeHtml(r.desc || '')}</div>
                 </div>
             `).join('');
             toast('แนะนำเมนูเสร็จแล้ว', 'success');
         } catch (err) {
-            list.innerHTML = `<div class="empty">วิเคราะห์ล้มเหลว: ${err.message}</div>`;
+            list.innerHTML = `<div class="empty">วิเคราะห์ล้มเหลว: ${escapeHtml(err.message)}</div>`;
         } finally {
             btn.disabled = false;
             btn.innerHTML = 'แนะนำเมนู';
@@ -5618,10 +8141,10 @@ function initEvents() {
             }
 
             if (!insights || insights.length === 0) insights = ['ยังมีข้อมูลไม่พอสำหรับการวิเคราะห์ — บันทึกข้อมูลให้ครบ 7 วันก่อน'];
-            list.innerHTML = insights.map(t => `<div class="insight-item">${t}</div>`).join('');
+            list.innerHTML = insights.map(t => `<div class="insight-item">${escapeHtml(t)}</div>`).join('');
             toast('Insights generated', 'success');
         } catch (err) {
-            list.innerHTML = `<div class="insight-item">วิเคราะห์ล้มเหลว: ${err.message}</div>`;
+            list.innerHTML = `<div class="insight-item">วิเคราะห์ล้มเหลว: ${escapeHtml(err.message)}</div>`;
             toast('AI วิเคราะห์ล้มเหลว', 'error');
         } finally {
             btn.disabled = false;
@@ -5651,16 +8174,51 @@ function initEvents() {
 }
 
 // ----- Init -----
+let _lastSeenDate = null;
+
+function checkDateRollover() {
+    const now = todayISO();
+    if (_lastSeenDate && now !== _lastSeenDate) {
+        // Day changed — refresh everything
+        $('#currentDate').textContent = fmtLongThaiDate();
+        // Update any date inputs that still hold yesterday's date
+        $$('input[type="date"]').forEach(i => {
+            if (i.value === _lastSeenDate) i.value = now;
+        });
+        // Re-render whichever view is active
+        const activeView = $$('.view').find(v => v.classList.contains('active'));
+        if (activeView) {
+            const name = activeView.id.replace('view-', '');
+            try { switchView(name); } catch (e) { console.warn('Rollover refresh failed:', e); }
+        }
+        toast('🌅 วันใหม่แล้ว — เควสรีเซ็ตอัตโนมัติ', 'success');
+    }
+    _lastSeenDate = now;
+}
+
 function init() {
     Storage.load();
     $('#currentDate').textContent = fmtLongThaiDate();
+    _lastSeenDate = todayISO();
     // Set default height
     if (Storage.config.defaultHeight && $('#wHeight')) {
         $('#wHeight').value = Storage.config.defaultHeight;
     }
     initEvents();
+    // Setup new tabs
+    setupTraining();
+    setupBody();
+    setupMeasurements();
+    setupRecovery();
     switchView('dashboard');
     updateSyncStatus();
+
+    // Watchdog: re-render when day changes (handles overnight sessions)
+    setInterval(checkDateRollover, 60 * 1000);  // every 60s
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) checkDateRollover();
+    });
+    window.addEventListener('focus', checkDateRollover);
 }
 
 document.addEventListener('DOMContentLoaded', init);

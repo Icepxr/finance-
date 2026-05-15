@@ -17,6 +17,7 @@
  *
  * โมเดลที่ใช้:
  *  - aiMeal (รูป+ข้อความ): meta-llama/llama-4-scout-17b-16e-instruct (vision)
+ *  - aiExercise:            llama-3.3-70b-versatile (reasoning)
  *  - aiInsight:             llama-3.3-70b-versatile (reasoning)
  *  - aiWorkoutPlan:         llama-3.3-70b-versatile (reasoning)
  *  - aiRecipe:              llama-3.1-8b-instant (fast)
@@ -33,7 +34,7 @@ const SHEET_ID = '';  // ใส่ ID ของชีตที่มีอยู
 const CATEGORIES = ['food', 'exercise', 'weight', 'water', 'sleep'];
 const HEADERS = {
   food:     ['id', 'date', 'meal', 'name', 'amount', 'calories', 'protein', 'carbs', 'fat', 'note', 'createdAt'],
-  exercise: ['id', 'date', 'exType', 'duration', 'calories', 'note', 'createdAt'],
+  exercise: ['id', 'date', 'exType', 'duration', 'distance', 'calories', 'note', 'createdAt'],
   weight:   ['id', 'date', 'weight', 'height', 'note', 'createdAt'],
   water:    ['id', 'date', 'amount', 'createdAt'],
   sleep:    ['id', 'date', 'hours', 'quality', 'createdAt']
@@ -54,9 +55,10 @@ function doPost(e) {
     const payload = body.payload || {};
 
     // AI actions don't need spreadsheet
-    if (action === 'aiMeal')    return _json({ ok: true, estimate: _aiMeal(payload) });
-    if (action === 'aiInsight') return _json({ ok: true, insights: _aiInsight(payload.weekly) });
-    if (action === 'aiRecipe')  return _json({ ok: true, recipes:  _aiRecipe(payload.remaining) });
+    if (action === 'aiMeal')     return _json({ ok: true, estimate: _aiMeal(payload) });
+    if (action === 'aiExercise') return _json({ ok: true, estimate: _aiExercise(payload) });
+    if (action === 'aiInsight')  return _json({ ok: true, insights: _aiInsight(payload.weekly) });
+    if (action === 'aiRecipe')   return _json({ ok: true, recipes:  _aiRecipe(payload.remaining) });
     if (action === 'aiWorkoutPlan') {
       var out = _aiWorkoutPlan(payload.opts || {});
       return _json({ ok: true, plan: out.plan, tips: out.tips });
@@ -197,6 +199,68 @@ function _aiMeal(payload) {
   };
 }
 
+/**
+ * AI Exercise parser — แตกค่า duration/distance/calories จากข้อความธรรมชาติ
+ * Accepts payload:
+ *   { description: string, note: string, sport: string, weightKg: number }
+ */
+function _aiExercise(payload) {
+  const description = String(payload.description || '').trim();
+  const note        = String(payload.note || '').trim();
+  const sportHint   = String(payload.sport || '').trim();
+  const weightKg    = Number(payload.weightKg) || 65;
+
+  if (!description && !note) throw new Error('Empty input — need description');
+
+  const sysPrompt = 'คุณคือเทรนเนอร์ AI ที่เชี่ยวชาญด้านสรีรวิทยาการออกกำลังกาย วิเคราะห์ข้อความและประมาณค่าการเผาผลาญพลังงาน ตอบเป็น JSON เท่านั้น';
+
+  const userText =
+    'วิเคราะห์การออกกำลังกายต่อไปนี้และประมาณค่าพลังงานที่ใช้\n\n' +
+    'ข้อความจากผู้ใช้: "' + description + '"' +
+    (note ? '\nหมายเหตุ: "' + note + '"' : '') +
+    (sportHint ? '\nผู้ใช้เลือกประเภท: ' + sportHint : '') +
+    '\nน้ำหนักผู้ใช้: ' + weightKg + ' kg\n\n' +
+    'แตกค่าให้แม่นยำ:\n' +
+    '- ระยะทาง (km) ถ้ามี เช่น "5km", "10 กิโล", "100m"\n' +
+    '- ระยะเวลา (นาที) ถ้ามี เช่น "45 min", "1 ชั่วโมง", "30 นาที"\n' +
+    '- เพซ (min/km) ถ้ามี เช่น "pace 6.30", "เพซ 5"\n' +
+    '- ถ้าระบุระยะทาง+เพซแต่ไม่ระบุเวลา → คำนวณเวลาให้\n' +
+    '- ใช้ MET ที่เหมาะสมกับกีฬาและความหนัก:\n' +
+    '  วิ่ง pace 4-5 min/km = 14-16 METs, pace 5-6 = 11-12, pace 6-7 = 9-10, pace 7+ = 6-8\n' +
+    '  เดิน = 3-5 METs, ปั่นจักรยาน 15-25 km/h = 6-10 METs\n' +
+    '  ว่ายน้ำ = 8-10 METs, เวทเทรนนิ่ง = 5-8 METs, HIIT = 10-12 METs, โยคะ = 2-4 METs\n' +
+    '- คำนวณ kcal = METs × weightKg × (duration_min / 60)\n' +
+    '- ปรับความหนักถ้าเจอคำว่า "หนัก/เร็ว/sprint" (+15%) หรือ "เบาๆ/สบายๆ/easy" (-15%)\n\n' +
+    'ตอบเป็น JSON object เท่านั้น รูปแบบ:\n' +
+    '{\n' +
+    '  "sport": "<ประเภทกีฬา ภาษาไทย เช่น วิ่ง, ปั่นจักรยาน, เวทเทรนนิ่ง>",\n' +
+    '  "duration": <นาที, integer>,\n' +
+    '  "distance": <km หรือ null ถ้าไม่ใช่ cardio>,\n' +
+    '  "pace": <min/km หรือ null>,\n' +
+    '  "mets": <METs ที่ใช้ในการคำนวณ>,\n' +
+    '  "calories": <kcal, integer>,\n' +
+    '  "analysis": "<วิเคราะห์สั้นๆ ภาษาไทย 1-2 ประโยค เช่น Zone 2, tempo run, intensity level>"\n' +
+    '}';
+
+  const messages = [
+    { role: 'system', content: sysPrompt },
+    { role: 'user',   content: userText }
+  ];
+
+  const out = _callGroq(messages, MODELS.reasoning, { jsonMode: true, temperature: 0.3, maxTokens: 700 });
+  const parsed = _parseJSON(out);
+
+  return {
+    sport:    String(parsed.sport || sportHint || 'อื่นๆ').slice(0, 30),
+    duration: Math.round(Number(parsed.duration) || 0),
+    distance: parsed.distance != null && parsed.distance !== '' ? Number(Number(parsed.distance).toFixed(2)) : null,
+    pace:     parsed.pace != null && parsed.pace !== '' ? Number(Number(parsed.pace).toFixed(2)) : null,
+    mets:     Number(parsed.mets) || 7,
+    calories: Math.round(Number(parsed.calories) || 0),
+    analysis: String(parsed.analysis || 'บันทึกการฝึกซ้อมแล้ว').slice(0, 300)
+  };
+}
+
 function _aiInsight(weekly) {
   if (!weekly) throw new Error('Empty weekly data');
   const sysPrompt = 'คุณคือ AI Health Coach ตอบเป็น JSON เท่านั้น';
@@ -326,9 +390,23 @@ function _ensureSheet(ss, name) {
     sh = ss.insertSheet(name);
     sh.appendRow(HEADERS[name]);
     sh.setFrozenRows(1);
-  } else if (sh.getLastRow() === 0) {
+    return sh;
+  }
+  if (sh.getLastRow() === 0) {
     sh.appendRow(HEADERS[name]);
     sh.setFrozenRows(1);
+    return sh;
+  }
+  // Auto-migrate: add any missing columns to existing sheet
+  const currentHeaders = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  const expected = HEADERS[name];
+  const missing = expected.filter(h => currentHeaders.indexOf(h) === -1);
+  if (missing.length > 0) {
+    let nextCol = currentHeaders.length + 1;
+    missing.forEach(h => {
+      sh.getRange(1, nextCol).setValue(h);
+      nextCol++;
+    });
   }
   return sh;
 }
