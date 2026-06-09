@@ -722,7 +722,7 @@ const MARKET_DATA = [
     pe_static:40.73, rating:'Strong Buy', ratingColor:'#34d399',
     earningsDate:'20 พ.ค. 2026',
     highlights:[
-      'Goldman Sachs คาด "major re-rating" ก่อน earnings 20 พ.ค.',
+      'Goldman Sachs คาด "majors re-rating" ก่อน earnings 20 พ.ค.',
       'ลงทุน $2.1B ใน IREN Data Center — สัญญา $3.4B',
       'SoftBank เจรจาสร้าง AI servers ในญี่ปุ่น',
       'ความเสี่ยง: ชิปถูกสงสัยลักลอบขายผ่านไทยไป Alibaba',

@@ -26,7 +26,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   background:url('assets/m4.jpg') center center / clamp(260px, 38vw, 620px) auto no-repeat;
   filter:brightness(.74) saturate(1.08) contrast(1.04);
   /* ไล่จางขอบสี่เหลี่ยมของรูปให้ละลายเข้าพื้นดำ เหลือแต่รถ */
-  -webkit-mask-image:radial-gradient(ellipse 23vw 19vw at 50% 50%, #000 45%, rgba(0,0,0,0) 80%);
+  -webkit-mask-image:radial-gradient(ellipse 23vw 19vw at 50% 50%, #000 45%, rgba(0,0,0,0) 81%);
   mask-image:radial-gradient(ellipse 23vw 19vw at 50% 50%, #000 30%, rgba(0,0,0,0) 55%)}
 #fx-bg::after{content:'';position:absolute;inset:0;
   background:
