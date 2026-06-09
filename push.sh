@@ -20,6 +20,11 @@ if [ "$cur" != "main" ]; then
   git branch -m main 2>/dev/null
 fi
 
+echo "🔄 เติมเลขเวอร์ชันท้าย css/js (กันเบราว์เซอร์ cache ของเก่า)..."
+ver=$(date +%s)
+sed -i '' -E "s#(href=\"styles\.css)(\?v=[0-9]+)?(\")#\1?v=$ver\3#; s#(src=\"app\.js)(\?v=[0-9]+)?(\")#\1?v=$ver\3#" index.html 2>/dev/null \
+  || sed -i -E "s#(href=\"styles\.css)(\?v=[0-9]+)?(\")#\1?v=$ver\3#; s#(src=\"app\.js)(\?v=[0-9]+)?(\")#\1?v=$ver\3#" index.html 2>/dev/null
+
 echo "📦 เก็บงานล่าสุดเข้า commit..."
 git add -A
 if git diff --cached --quiet; then
