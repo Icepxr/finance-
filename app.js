@@ -85,11 +85,64 @@ function initWaveLabels(){
   });
 }
 
-const catEmoji = {
-  Food:'🍜', Transport:'🚗', Shopping:'🛍️', Bills:'⚡', Education:'📚',
-  Entertainment:'🎮', Investment:'📈', Salary:'💼', Freelance:'💻', Other:'📦',
-  Bitcoin:'₿', ETF:'📊', Gold:'🥇', Stock:'📈', Savings:'🏦'
+// ── ไอคอนหมวด/สินทรัพย์ (รูปใน assets/) ──
+const ICON_FILE = {
+  Food:'food', Transport:'transport', Shopping:'shopping', Bills:'bills', Education:'education',
+  Entertainment:'Entertainment', Investment:'investment', Salary:'salary', Freelance:'freelance', Other:'other',
+  Bitcoin:'bitcoin', ETF:'etf', Gold:'gold', Stock:'stock', Savings:'savings'
 };
+const LABELS = {
+  Salary:'Salary', Freelance:'Freelance', Food:'Food', Transport:'Transport', Shopping:'Shopping',
+  Bills:'Bills', Education:'Education', Entertainment:'Entertainment', Investment:'Investment', Other:'Other',
+  Bitcoin:'Bitcoin', ETF:'ETF', Gold:'Gold', Stock:'Stock', Savings:'Savings'
+};
+const labelFor = v => LABELS[v] || v;
+// คืน <img> ไอคอนสีขาว (silhouette ดำ + filter invert) — fallback เป็นจุด
+const icon = (key, px = 20) => {
+  const f = ICON_FILE[key];
+  return f ? `<img src="assets/${f}.png" alt="" class="ic" style="width:${px}px;height:${px}px">`
+           : `<span class="ic-dot"></span>`;
+};
+
+// ── Custom dropdown ที่โชว์ไอคอน (ห่อ native <select class="icon-native">) ──
+function refreshIsel(sel){
+  if (!sel || !sel._btn) return;
+  sel._btn.innerHTML = icon(sel.value, 20) + `<span>${labelFor(sel.value)}</span><span class="isel-caret">▾</span>`;
+  if (sel._menu) sel._menu.querySelectorAll('.isel-item').forEach(it =>
+    it.classList.toggle('sel', it.dataset.value === sel.value));
+}
+function buildIconSelects(){
+  document.querySelectorAll('select.icon-native').forEach(sel => {
+    if (sel._iconBuilt) return;
+    sel._iconBuilt = true;
+    sel.style.display = 'none';
+    const wrap = document.createElement('div'); wrap.className = 'isel';
+    const btn  = document.createElement('button'); btn.type = 'button'; btn.className = 'isel-btn';
+    const menu = document.createElement('div'); menu.className = 'isel-menu';
+    Array.from(sel.options).forEach(o => {
+      const item = document.createElement('div');
+      item.className = 'isel-item'; item.dataset.value = o.value;
+      item.innerHTML = icon(o.value, 20) + `<span>${labelFor(o.value)}</span>`;
+      item.addEventListener('click', () => {
+        sel.value = o.value;
+        sel.dispatchEvent(new Event('change'));
+        refreshIsel(sel);
+        menu.classList.remove('open');
+      });
+      menu.appendChild(item);
+    });
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      document.querySelectorAll('.isel-menu.open').forEach(m => { if (m !== menu) m.classList.remove('open'); });
+      menu.classList.toggle('open');
+    });
+    sel.parentNode.insertBefore(wrap, sel.nextSibling);
+    wrap.appendChild(btn); wrap.appendChild(menu);
+    sel._btn = btn; sel._menu = menu;
+    refreshIsel(sel);
+  });
+}
+document.addEventListener('click', () => document.querySelectorAll('.isel-menu.open').forEach(m => m.classList.remove('open')));
 
 // ============================================================
 // API — แก้ CORS ด้วย redirect:follow + Content-Type:text/plain
@@ -255,6 +308,7 @@ function openEditTransaction(id) {
   setType(tx.type);
   document.getElementById('tx-amount').value = tx.amount;
   document.getElementById('tx-cat').value = tx.category;
+  refreshIsel(document.getElementById('tx-cat'));
   document.getElementById('tx-date').value = tx.date;
   document.getElementById('tx-note').value = tx.note || '';
   document.querySelector('#modal-tx h2').textContent = 'Edit Transaction';
@@ -363,7 +417,7 @@ async function scanSlip() {
       <div style="display:grid;grid-template-columns:auto 1fr;gap:.35rem .85rem;font-size:.83rem;align-items:center">
         <span style="color:var(--muted)">ประเภท</span><span style="color:${isInc?'#34d399':'#f87171'};font-weight:600">${slipData.type}</span>
         <span style="color:var(--muted)">จำนวน</span><span style="font-weight:700;font-size:.95rem">${CONFIG.currency}${Number(slipData.amount||0).toLocaleString()}</span>
-        <span style="color:var(--muted)">หมวด</span><span>${catEmoji[slipData.category]||'📦'} ${slipData.category||'Other'}</span>
+        <span style="color:var(--muted)">หมวด</span><span style="display:inline-flex;align-items:center;gap:.4rem">${icon(slipData.category,18)} ${slipData.category||'Other'}</span>
         <span style="color:var(--muted)">วันที่</span><span>${slipData.date||'ไม่ระบุ'}</span>
         <span style="color:var(--muted)">หมายเหตุ</span><span style="color:var(--text)">${slipData.note||'-'}</span>
       </div>`;
@@ -385,7 +439,7 @@ function fillFromSlip() {
   setType(slipData.type === 'Income' ? 'Income' : 'Expense');
   if (slipData.amount) document.getElementById('tx-amount').value = slipData.amount;
   const catOpt = document.querySelector(`#tx-cat option[value="${slipData.category}"]`);
-  if (catOpt) document.getElementById('tx-cat').value = slipData.category;
+  if (catOpt) { document.getElementById('tx-cat').value = slipData.category; refreshIsel(document.getElementById('tx-cat')); }
   document.getElementById('tx-date').value = slipData.date || new Date().toISOString().slice(0,10);
   if (slipData.note) document.getElementById('tx-note').value = slipData.note;
   editingTxId = null;
@@ -423,7 +477,7 @@ function renderTransactions() {
 function txRow(t, showDelete=false) {
   const isInc = t.type === 'Income';
   return `<div class="tx-row">
-    <div class="tx-icon" style="background:${isInc?'rgba(52,211,153,.1)':'rgba(248,113,113,.1)'}">${catEmoji[t.category]||'📦'}</div>
+    <div class="tx-icon" style="background:${isInc?'rgba(52,211,153,.1)':'rgba(248,113,113,.1)'}">${icon(t.category,20)}</div>
     <div>
       <div style="font-size:.85rem;font-weight:500">${t.category}</div>
       <div style="font-size:.72rem;color:var(--muted)">${t.note||t.date}</div>
@@ -607,7 +661,7 @@ async function syncFromSheet() {
     toast('Sync failed: ' + e.message, false);
   } finally {
     isSyncing = false;
-    if (btn) { btn.disabled = false; btn.textContent = '☁️ Sync from Sheet'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<img class="ic-btn" src="assets/cloud.png"> <span class="hl">Sync from Sheet</span>'; }
   }
 }
 
@@ -621,13 +675,6 @@ async function autoSyncOnLoad() {
 }
 
 
-const PORTFOLIO_TICKERS = [
-  { ticker:'NVDA',  name:'NVIDIA',    shares:null, currency:'USD', flag:'🇺🇸' },
-  { ticker:'TSM',   name:'TSMC ADR',  shares:null, currency:'USD', flag:'🇹🇼' },
-  { ticker:'SPUS',  name:'SP Funds S&P 500 ETF (Halal)', shares:null, currency:'USD', flag:'🌙' },
-  { ticker:'SPTE',  name:'SP Funds S&P Global Tech ETF (Halal)', shares:null, currency:'USD', flag:'🌙' },
-];
-
 // แยก ticker จาก note (ผู้ใช้กรอกชื่อหุ้นล้วน ๆ เช่น "NVDA" หรือ "BRK.B")
 function extractTicker(note) {
   if (!note) return null;
@@ -635,16 +682,13 @@ function extractTicker(note) {
   return m ? m[0] : null;
 }
 
+// ดึง ticker จาก note ของ investment ที่ผู้ใช้ใส่จริง — ไม่มี hardcode รายชื่อหุ้น
 function getUserHeldTickers() {
-  // ดึง ticker จาก note ของ investment ที่ผู้ใช้ใส่ไว้ (เฉพาะที่ผู้ใช้ถืออยู่จริง)
   const map = new Map();
   state.investments.forEach(i => {
     const t = extractTicker(i.note);
     if (!t) return;
-    if (!map.has(t)) {
-      const known = PORTFOLIO_TICKERS.find(p => p.ticker === t);
-      map.set(t, known || { ticker:t, name:t, shares:null, currency:'USD', flag:'📈' });
-    }
+    if (!map.has(t)) map.set(t, { ticker:t, name:t });
   });
   return Array.from(map.values());
 }
@@ -713,50 +757,8 @@ function getHoldings() {
   return result;
 }
 
-// ============================================================
-// MARKET DATA
-// ============================================================
-const MARKET_DATA = [
-  {
-    ticker:'NVDA', name:'NVIDIA Corporation', type:'หุ้นสหรัฐ', flag:'🇺🇸',
-    pe_static:40.73, rating:'Strong Buy', ratingColor:'#34d399',
-    earningsDate:'20 พ.ค. 2026',
-    highlights:[
-      'Goldman Sachs คาด "majors re-rating" ก่อน earnings 20 พ.ค.',
-      'ลงทุน $2.1B ใน IREN Data Center — สัญญา $3.4B',
-      'SoftBank เจรจาสร้าง AI servers ในญี่ปุ่น',
-      'ความเสี่ยง: ชิปถูกสงสัยลักลอบขายผ่านไทยไป Alibaba',
-    ],
-    risk:'สูง', riskColor:'#f87171',
-    summary:'King of AI chips — earnings สำคัญมาก 20 พ.ค. 2026',
-  },
-  {
-    ticker:'TSM', name:'Taiwan Semiconductor (TSMC)', type:'หุ้นไต้หวัน (ADR)', flag:'🇹🇼',
-    pe_static:33.95, rating:'Strong Buy', ratingColor:'#34d399',
-    earningsDate:'16 ก.ค. 2026',
-    highlights:[
-      'รายได้ Q1 2026 โต 35% YoY — แข็งแกร่งมาก',
-      'รายได้เดือน เม.ย. NT$410B โต 17.5% YoY',
-      'กำไร Q1 โต ~60% YoY สู่ $20B+',
-      'JV กับ Sony พัฒนา next-gen image sensors ในญี่ปุ่น',
-    ],
-    risk:'ปานกลาง', riskColor:'#fbbf24',
-    summary:'ผู้ผลิตชิปเบอร์ 1 โลก — YTD +31% แข็งกว่า NVDA ปีนี้',
-  },
-  {
-    ticker:'SPTE', name:'SP Funds S&P Global Tech ETF', type:'ETF ฮาลาล (Shariah)', flag:'🌙',
-    pe_static:null, rating:'Halal ✓', ratingColor:'#a78bfa',
-    earningsDate:'ไม่มี (ETF)',
-    highlights:[
-      'ผ่าน Shariah screening — ไม่มีดอกเบี้ย ไม่มีหุ้นต้องห้าม',
-      '~47% international stocks (global tech)',
-      'ครอบคลุม AI, cloud, e-commerce, healthtech ทั่วโลก',
-      'Expense ratio 0.55% — แข่งขันได้กับ ESG ETF ทั่วไป',
-    ],
-    risk:'ปานกลาง', riskColor:'#fbbf24',
-    summary:'ทางเลือกฮาลาลเทคโนโลยีระดับโลก — เหมาะลงทุนระยะยาว DCA',
-  },
-];
+// หมายเหตุ: ไม่มี hardcode ข้อมูลหุ้นอีกต่อไป — ทุกอย่างมาจาก ticker ที่ผู้ใช้ถือจริง
+// + ราคา real-time จาก Finnhub และบทวิเคราะห์จาก AI (Groq)
 
 function renderPortfolioSummary() {
   const el = document.getElementById('portfolio-summary');
@@ -818,9 +820,9 @@ function renderPortfolioSummary() {
     <div style="display:flex;flex-direction:column;gap:.4rem">
       ${rows.map(r => `
         <div style="display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:.6rem;padding:.6rem .75rem;background:var(--bg);border-radius:10px">
-          <div style="font-size:1rem">${r.p.flag}</div>
+          <div style="display:inline-flex">${icon('Stock',18)}</div>
           <div>
-            <div style="font-size:.82rem;font-weight:600">${r.p.ticker} <span style="font-size:.65rem;color:var(--muted);font-weight:400">${r.p.name}</span></div>
+            <div style="font-size:.82rem;font-weight:600">${r.p.ticker}</div>
             <div style="font-size:.68rem;color:var(--muted)">${r.q.c.toFixed(2)} · ${r.shares.toFixed(3)} หุ้น (approx)</div>
           </div>
           <div style="text-align:right">
@@ -854,37 +856,23 @@ function renderMarketCards() {
   }
 
   el.innerHTML = held.map(p => {
-    // ดู MARKET_DATA สำหรับวิเคราะห์รวยๆ ถ้าไม่มี ใช้ข้อมูลพื้นฐาน
-    const s = MARKET_DATA.find(m => m.ticker === p.ticker) || {
-      ticker: p.ticker, name: p.name, type: '—', flag: p.flag || '📈',
-      pe_static: null, rating: 'N/A', ratingColor: 'var(--muted)',
-      earningsDate: '—', highlights: [], risk: '—', riskColor: 'var(--muted)',
-      summary: 'ไม่มีบทวิเคราะห์ — แสดงเฉพาะราคา real-time'
-    };
     const q = liveQuotes[p.ticker];
     const hasLive = q && q.c;
+    const rng = hasLive ? Math.min(100,Math.max(0,((q.c-q.l)/(q.h-q.l||1)*100))).toFixed(0) : 0;
     return `
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:1rem">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.65rem">
-        <div>
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <span style="font-size:.9rem">${s.flag||''}</span>
-            <span style="font-size:1rem;font-weight:700;color:var(--accent)">${s.ticker}</span>
-            <span style="font-size:.62rem;background:rgba(167,139,250,.12);color:var(--accent);border-radius:6px;padding:.1rem .45rem;font-weight:600">${s.type}</span>
-          </div>
-          <div style="font-size:.72rem;color:var(--muted);margin-top:.1rem">${s.name}</div>
-        </div>
-        <span style="font-size:.68rem;font-weight:600;padding:.2rem .55rem;border-radius:6px;background:rgba(52,211,153,.08);color:${s.ratingColor}">${s.rating}</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.65rem">
+        <span style="font-size:1.05rem;font-weight:700;color:var(--accent)">${p.ticker}</span>
+        ${hasLive ? '<span style="font-size:.62rem;color:var(--muted);background:rgba(52,211,153,.08);padding:.1rem .45rem;border-radius:5px">🟢 LIVE</span>' : ''}
       </div>
 
       ${hasLive ? `
-      <div style="display:flex;align-items:baseline;gap:.5rem;margin-bottom:.6rem">
+      <div style="display:flex;align-items:baseline;gap:.5rem;margin-bottom:.65rem">
         <span style="font-size:1.4rem;font-weight:700">${q.c.toFixed(2)}</span>
         <span style="font-size:.85rem;font-weight:700;color:${q.dp>=0?'#34d399':'#f87171'}">${q.dp>=0?'+':''}${q.dp?.toFixed(2)}%</span>
         <span style="font-size:.68rem;color:${q.d>=0?'#34d399':'#f87171'}">${q.d>=0?'+':''}${q.d?.toFixed(2)}</span>
-        <span style="margin-left:auto;font-size:.62rem;color:var(--muted);background:rgba(52,211,153,.08);padding:.1rem .4rem;border-radius:5px">🟢 LIVE</span>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.3rem;margin-bottom:.65rem">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.3rem;margin-bottom:.65rem">
         <div style="background:var(--bg);border-radius:8px;padding:.35rem .4rem;text-align:center">
           <div style="font-size:.58rem;color:var(--muted)">เปิด</div>
           <div style="font-size:.75rem;font-weight:600">${q.o?.toFixed(2)}</div>
@@ -897,39 +885,18 @@ function renderMarketCards() {
           <div style="font-size:.58rem;color:var(--muted)">ต่ำ</div>
           <div style="font-size:.75rem;font-weight:600;color:#f87171">${q.l?.toFixed(2)}</div>
         </div>
-        <div style="background:var(--bg);border-radius:8px;padding:.35rem .4rem;text-align:center">
-          <div style="font-size:.58rem;color:var(--muted)">P/E</div>
-          <div style="font-size:.75rem;font-weight:600">${s.pe_static ? s.pe_static+'x' : 'ETF'}</div>
-        </div>
       </div>
-      <div style="margin-bottom:.65rem">
+      <div>
         <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);margin-bottom:.25rem">
-          <span>ต่ำสุด ${q.l?.toFixed(2)}</span><span>สูงสุด ${q.h?.toFixed(2)}</span>
+          <span>ต่ำ ${q.l?.toFixed(2)}</span><span>ตอนนี้ ${rng}%</span><span>สูง ${q.h?.toFixed(2)}</span>
         </div>
         <div style="height:4px;background:var(--border);border-radius:99px;overflow:hidden">
-          <div style="height:100%;background:linear-gradient(90deg,#f87171,#fbbf24,#34d399);border-radius:99px;width:${Math.min(100,Math.max(0,((q.c-q.l)/(q.h-q.l||1)*100))).toFixed(0)}%"></div>
+          <div style="height:100%;background:linear-gradient(90deg,#f87171,#fbbf24,#34d399);border-radius:99px;width:${rng}%"></div>
         </div>
-        <div style="font-size:.6rem;color:var(--muted);margin-top:.2rem;text-align:center">ราคาปัจจุบันอยู่ในช่วงวันนี้ = ${Math.min(100,Math.max(0,((q.c-q.l)/(q.h-q.l||1)*100))).toFixed(0)}%</div>
       </div>` : `
-      <div style="background:var(--bg);border-radius:8px;padding:.6rem .75rem;margin-bottom:.65rem;display:flex;align-items:center;gap:.5rem">
+      <div style="background:var(--bg);border-radius:8px;padding:.7rem .75rem;display:flex;align-items:center;gap:.5rem">
         ${CONFIG.hasBackend ? '<span style="font-size:.75rem;color:var(--muted)">⏳ กำลังโหลดราคา...</span>' : '<span style="font-size:.75rem;color:var(--muted)">⚙️ เชื่อมต่อ Backend URL ในหน้า Settings</span>'}
       </div>`}
-
-      ${s.highlights && s.highlights.length ? `
-      <div style="font-size:.72rem;color:var(--text);background:var(--bg);border-radius:8px;padding:.5rem .65rem;margin-bottom:.6rem;line-height:1.7">
-        ${s.highlights.map(h=>`• ${h}`).join('<br>')}
-      </div>` : ''}
-      ${s.risk && s.risk !== '—' ? `
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="display:flex;align-items:center;gap:.35rem">
-          <span style="font-size:.65rem;color:var(--muted)">ความเสี่ยง:</span>
-          <span style="font-size:.65rem;font-weight:700;color:${s.riskColor}">${s.risk}</span>
-        </div>
-        <span style="font-size:.65rem;color:var(--muted)">${s.earningsDate && s.earningsDate !== 'ไม่มี (ETF)' && s.earningsDate !== '—' ? 'Earnings: '+s.earningsDate : ''}</span>
-      </div>` : ''}
-      <div style="margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--border);font-size:.72rem;color:var(--accent);font-style:italic">
-        💡 ${s.summary}
-      </div>
     </div>`
   }).join('');
 }
@@ -963,10 +930,10 @@ async function analyzePortfolioWithAI() {
   try {
     const totalInvested = Object.values(holdings).reduce((s,x)=>s+(x.invested||0),0);
     const lines = heldTickers.map(t => {
-      const h = holdings[t]; const q = liveQuotes[t] || {}; const k = MARKET_DATA.find(m=>m.ticker===t);
+      const h = holdings[t]; const q = liveQuotes[t] || {};
       const pct = totalInvested ? (h.invested/totalInvested*100).toFixed(1) : '0';
       const price = q.c ? `ราคา $${q.c.toFixed(2)} (${q.dp>=0?'+':''}${(q.dp||0).toFixed(2)}%)` : 'ไม่มีราคา real-time';
-      return `- ${t}${k?` (${k.name})`:''}: ลงทุน ฿${(h.invested||0).toLocaleString()} = ${pct}% ของพอร์ต · ${price}${k?` · P/E ${k.pe_static||'N/A'} · rating ${k.rating}`:''}`;
+      return `- ${t}: ลงทุน ฿${(h.invested||0).toLocaleString()} = ${pct}% ของพอร์ต · ${price}`;
     }).join('\n');
 
     const prompt = `คุณเป็นนักวิเคราะห์การลงทุนภาษาไทย วิเคราะห์ "ทั้งพอร์ต" ของผู้ใช้แบบกระชับ ตรงประเด็น
@@ -1001,7 +968,7 @@ ${lines}
   } catch (e) {
     container.innerHTML = `<div style="margin-top:.6rem;padding:.6rem .7rem;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);border-radius:8px;font-size:.72rem;color:#f87171">⚠ ${e.message}</div>`;
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '🔄 วิเคราะห์พอร์ตใหม่'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<img class="ic-btn" src="assets/refresh.png"> วิเคราะห์พอร์ตใหม่'; }
   }
 }
 
@@ -1087,6 +1054,7 @@ function openEditInvestment(id) {
   if (!inv) return;
   document.getElementById('edit-inv-id').value    = inv.id;
   document.getElementById('edit-inv-asset').value = inv.asset;
+  refreshIsel(document.getElementById('edit-inv-asset'));
   document.getElementById('edit-inv-amount').value= inv.amount;
   document.getElementById('edit-inv-date').value  = inv.date;
   document.getElementById('edit-inv-note').value  = inv.note || '';
@@ -1145,7 +1113,7 @@ function renderInvestments() {
   } else {
     cardsEl.innerHTML = assets.map(a => `
       <div class="card-sm">
-        <div style="font-size:1.5rem;margin-bottom:.5rem">${catEmoji[a]||'💰'}</div>
+        <div style="margin-bottom:.5rem">${icon(a,28)}</div>
         <div style="font-size:.72rem;color:var(--muted);font-weight:500">${a}</div>
         <div style="font-size:1.2rem;font-weight:700;color:var(--accent);margin-top:.25rem">${fmt(assetTotals[a])}</div>
       </div>
@@ -1155,7 +1123,7 @@ function renderInvestments() {
   document.getElementById('invest-list').innerHTML = state.investments.map(i => `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:var(--surface2);border-radius:10px">
       <div style="display:flex;align-items:center;gap:.6rem">
-        <span>${catEmoji[i.asset]||'💰'}</span>
+        <span style="display:inline-flex">${icon(i.asset,18)}</span>
         <div><div style="font-size:.82rem;font-weight:500">${i.asset}</div><div style="font-size:.7rem;color:var(--muted)">${i.date}</div></div>
       </div>
       <div style="display:flex;align-items:center;gap:.5rem">
@@ -1306,7 +1274,7 @@ function renderAnalytics() {
   const max = sorted[0]?.[1] || 1;
   document.getElementById('analytics-cats').innerHTML = sorted.slice(0,6).map(([cat,amt]) => `
     <div>
-      <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.3rem"><span>${catEmoji[cat]||'📦'} ${cat}</span><span style="color:var(--muted)">${fmt(amt)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.3rem"><span style="display:inline-flex;align-items:center;gap:.4rem">${icon(cat,16)} ${cat}</span><span style="color:var(--muted)">${fmt(amt)}</span></div>
       <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(amt/max*100)}%;background:linear-gradient(90deg,#f87171,#fb923c)"></div></div>
     </div>
   `).join('') || '<div style="color:var(--muted);font-size:.8rem">No data yet</div>';
@@ -1401,6 +1369,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (b) b.dataset.label = b.textContent;
   });
   initWaveLabels();
+  buildIconSelects();
   renderDashboard();
   autoSyncOnLoad();
   if (!state.transactions.length && !state.investments.length) {

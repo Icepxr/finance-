@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FinanceOS">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=1781019727">
+<link rel="stylesheet" href="styles.css?v=1781024244">
 </head>
 <body>
 
@@ -27,8 +27,8 @@
       <h1 id="page-title" style="font-size:1.2rem;font-weight:700">Dashboard</h1>
     </div>
     <div style="display:flex;gap:.5rem;align-items:center">
-      <button id="btn-sync" onclick="syncFromSheet()" class="btn-ghost" style="font-size:.78rem;padding:.45rem .75rem">☁️ <span class="hl">Sync from Sheet</span></button>
-      <button class="btn-ghost" onclick="openSlipModal()" style="font-size:.78rem;padding:.45rem .75rem">📷 <span class="hl">Scan Slip</span></button>
+      <button id="btn-sync" onclick="syncFromSheet()" class="btn-ghost" style="font-size:.78rem;padding:.45rem .75rem"><img class="ic-btn" src="assets/cloud.png"> <span class="hl">Sync from Sheet</span></button>
+      <button class="btn-ghost" onclick="openSlipModal()" style="font-size:.78rem;padding:.45rem .75rem"><img class="ic-btn" src="assets/scan.png"> <span class="hl">Scan Slip</span></button>
       <button class="btn-primary" onclick="openModal()" style="white-space:nowrap">+<span class="hl"> Add Transaction</span></button>
     </div>
   </div>
@@ -89,10 +89,10 @@
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
         <div style="font-size:.8rem;font-weight:600;color:var(--muted)">📊 PORTFOLIO TRACKER</div>
-        <button id="btn-refresh-quotes" onclick="refreshAllQuotes()" class="btn-primary" style="font-size:.75rem;padding:.4rem .9rem">🔄 Refresh Price</button>
+        <button id="btn-refresh-quotes" onclick="refreshAllQuotes()" class="btn-primary" style="font-size:.75rem;padding:.4rem .9rem"><img class="ic-btn" src="assets/refresh.png"> Refresh Price</button>
       </div>
       <div id="portfolio-summary" style="margin-bottom:1rem"></div>
-      <button id="btn-ai-portfolio" onclick="analyzePortfolioWithAI()" style="width:100%;background:linear-gradient(135deg,rgba(167,139,250,.2),rgba(124,58,237,.12));border:1px solid rgba(167,139,250,.4);color:var(--accent);border-radius:10px;padding:.6rem;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .15s">🤖 วิเคราะห์พอร์ตทั้งหมดด้วย AI</button>
+      <button id="btn-ai-portfolio" onclick="analyzePortfolioWithAI()" style="width:100%;background:linear-gradient(135deg,rgba(167,139,250,.2),rgba(124,58,237,.12));border:1px solid rgba(167,139,250,.4);color:var(--accent);border-radius:10px;padding:.6rem;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .15s"><img class="ic-btn" src="assets/AI.png"> วิเคราะห์พอร์ตทั้งหมดด้วย AI</button>
       <div id="ai-portfolio-result" style="display:none"></div>
       <div style="font-size:.8rem;font-weight:600;color:var(--muted);margin:1rem 0 .75rem;padding-top:.75rem;border-top:1px solid var(--border)">📡 MARKET ANALYSIS</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.75rem" id="market-cards"></div>
@@ -237,7 +237,7 @@
     <div style="display:flex;flex-direction:column;gap:.75rem">
       <div class="wave-group"><input type="number" id="tx-amount" min="0" step="0.01" class="input" placeholder=" "><span class="bar"></span><label class="label" data-text="Amount"></label></div>
       <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Category</label>
-        <select id="tx-cat">
+        <select id="tx-cat" class="icon-native">
           <option value="Salary">💼 Salary</option><option value="Freelance">💻 Freelance</option>
           <option value="Food">🍜 Food</option><option value="Transport">🚗 Transport</option>
           <option value="Shopping">🛍️ Shopping</option><option value="Bills">⚡ Bills</option>
@@ -265,7 +265,7 @@
     <input type="hidden" id="edit-inv-id">
     <div style="display:flex;flex-direction:column;gap:.75rem">
       <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Asset</label>
-        <select id="edit-inv-asset">
+        <select id="edit-inv-asset" class="icon-native">
           <option value="Bitcoin">₿ Bitcoin</option><option value="ETF">📊 ETF</option>
           <option value="Gold">🥇 Gold</option><option value="Stock">📈 Stock</option>
           <option value="Savings">🏦 Savings</option>
@@ -291,7 +291,7 @@
     </div>
     <div style="display:flex;flex-direction:column;gap:.75rem">
       <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Asset</label>
-        <select id="inv-asset">
+        <select id="inv-asset" class="icon-native">
           <option value="Bitcoin">₿ Bitcoin</option><option value="ETF">📊 ETF</option>
           <option value="Gold">🥇 Gold</option><option value="Stock">📈 Stock</option>
           <option value="Savings">🏦 Savings</option>
@@ -330,6 +330,6 @@
 
 <div id="toast" style="display:none;position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.7rem 1.25rem;border-radius:12px;font-size:.85rem;font-weight:500;z-index:200"></div>
 
-<script src="app.js?v=1781019727"></script>
+<script src="app.js?v=1781024244"></script>
 </body>
 </html>
