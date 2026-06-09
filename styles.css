@@ -92,7 +92,7 @@ select option{background:#15151c}
 
 /* ── Main content (full width, centered) ── */
 body{display:block}
-.main-content{width:100%;max-width:1080px;margin:0 auto;padding:1.5rem 1.5rem calc(120px + env(safe-area-inset-bottom))}
+.main-content{width:100%;max-width:1080px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 1rem) 1.5rem calc(120px + env(safe-area-inset-bottom))}
 #logo-icon{box-shadow:0 0 0 1px var(--border-strong)}
 
 /* ── Bottom icon nav (replaces sidebar) ── */
@@ -140,9 +140,8 @@ body{display:block}
   .modal-overlay{align-items:flex-end;padding:0}
   .modal{border-radius:18px 18px 0 0;max-height:92vh;overflow-y:auto;width:100%;max-width:100%}
   .ch{height:160px!important}
-  .main-content{padding:.85rem .85rem calc(104px + env(safe-area-inset-bottom))!important}
+  .main-content{padding:calc(env(safe-area-inset-top) + .85rem) .85rem calc(104px + env(safe-area-inset-bottom))!important}
   .stat-card [id^="stat-"]{font-size:1.4rem!important}
-  #btn-sync{display:none}
   #page-title{font-size:1.05rem!important}
   .month-nav .ml{min-width:96px}
   /* bottom-nav เต็มความกว้าง แตะง่าย */
