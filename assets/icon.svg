@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="vio" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c4b5fd"/>
+      <stop offset="0.45" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#4c1d95"/>
+    </linearGradient>
+    <linearGradient id="vio2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7c3aed" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="#08080b"/>
+
+  <!-- ambient purple glow -->
+  <circle cx="256" cy="262" r="170" fill="url(#glow)"/>
+  <!-- faint outer ring -->
+  <circle cx="256" cy="256" r="186" fill="none" stroke="#7c3aed" stroke-opacity="0.20" stroke-width="3"/>
+
+  <!-- diamond double frame -->
+  <path d="M256 70 L430 256 L256 442 L82 256 Z" fill="none" stroke="url(#vio)" stroke-width="17" stroke-linejoin="round"/>
+  <path d="M256 104 L398 256 L256 408 L114 256 Z" fill="none" stroke="#6d28d9" stroke-opacity="0.85" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- inner circle -->
+  <circle cx="256" cy="240" r="92" fill="none" stroke="url(#vio2)" stroke-width="8"/>
+
+  <!-- bottom petals (black on glow) -->
+  <path d="M256 432 C214 374 196 318 214 286 C236 318 250 360 256 404 C262 360 276 318 298 286 C316 318 298 374 256 432 Z" fill="#0c0c12"/>
+
+  <!-- central 4-point sparkle -->
+  <path d="M256 168 Q269 227 318 240 Q269 253 256 312 Q243 253 194 240 Q243 227 256 168 Z" fill="url(#vio)"/>
+  <path d="M256 196 Q264 233 294 240 Q264 247 256 284 Q248 247 218 240 Q248 233 256 196 Z" fill="#c4b5fd" opacity="0.55" filter="url(#soft)"/>
+</svg>

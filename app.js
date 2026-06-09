@@ -1,0 +1,1555 @@
+// ============================================================
+// CONFIG
+// ============================================================
+// ⚙️ ต้องตรงกับ API_KEY ใน code.gs (ไม่ต้องแก้ถ้าใช้ค่า default)
+const BACKEND_KEY = '092548iii';
+
+const CONFIG = {
+  get apiUrl(){ return localStorage.getItem('cfg_url') || '' },
+  get apiKey(){ return localStorage.getItem('cfg_key') || BACKEND_KEY },
+  get currency(){ return localStorage.getItem('cfg_currency') || '฿' },
+  get hasBackend(){ return !!localStorage.getItem('cfg_url') },   // ฟีเจอร์หุ้น/AI/sync ใช้ backend
+  get useLocal(){ return !localStorage.getItem('cfg_url') }
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  transactions: JSON.parse(localStorage.getItem('transactions') || '[]'),
+  investments:  JSON.parse(localStorage.getItem('investments')  || '[]'),
+  goals:        JSON.parse(localStorage.getItem('goals')        || '[]'),
+};
+let txType = 'Income';
+let editingTxId = null;
+let slipData = null;
+let charts = {};
+
+// ============================================================
+// HELPERS
+// ============================================================
+const fmt = n => CONFIG.currency + Number(n).toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0});
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const thisMonth = () => new Date().toISOString().slice(0,7);
+
+// ── Month navigation (Dashboard) ───────────────────────────
+const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+let selectedMonth = thisMonth();   // 'YYYY-MM'
+const monthLabelTH = ym => { const [y,m] = ym.split('-').map(Number); return TH_MONTHS[m-1] + ' ' + y; };
+const addMonths = (ym, delta) => { const [y,m] = ym.split('-').map(Number); const d = new Date(y, m-1+delta, 1); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); };
+function shiftMonth(delta){
+  const next = addMonths(selectedMonth, delta);
+  if (next > thisMonth()) return;            // ไม่เลื่อนไปอนาคต
+  selectedMonth = next;
+  renderDashboard();
+}
+const save = () => {
+  localStorage.setItem('transactions', JSON.stringify(state.transactions));
+  localStorage.setItem('investments',  JSON.stringify(state.investments));
+  localStorage.setItem('goals',        JSON.stringify(state.goals));
+};
+const toast = (msg, ok=true) => {
+  const t = document.getElementById('toast');
+  t.textContent = (ok ? '✓ ' : '⚠ ') + msg;
+  t.style.display = 'block';
+  t.style.borderColor = ok ? 'rgba(52,211,153,.3)' : 'rgba(248,113,113,.3)';
+  t.style.color = ok ? '#34d399' : '#f87171';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.display = 'none', 2800);
+};
+const setLoading = (btnId, loading) => {
+  const b = document.getElementById(btnId);
+  if (!b) return;
+  b.disabled = loading;
+  b.style.opacity = loading ? '.6' : '1';
+  b.textContent = loading ? 'Saving...' : b.dataset.label || b.textContent;
+};
+
+const catEmoji = {
+  Food:'🍜', Transport:'🚗', Shopping:'🛍️', Bills:'⚡', Education:'📚',
+  Entertainment:'🎮', Investment:'📈', Salary:'💼', Freelance:'💻', Other:'📦',
+  Bitcoin:'₿', ETF:'📊', Gold:'🥇', Stock:'📈', Savings:'🏦'
+};
+
+// ============================================================
+// API — แก้ CORS ด้วย redirect:follow + Content-Type:text/plain
+// ============================================================
+async function apiFetch(params) {
+  const url = new URL(CONFIG.apiUrl);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, String(v)));
+  url.searchParams.set('key', CONFIG.apiKey);
+  const res = await fetch(url.toString(), { method: 'GET', redirect: 'follow' });
+  return res.json();
+}
+
+async function apiPost(body) {
+  const url = new URL(CONFIG.apiUrl);
+  url.searchParams.set('key', CONFIG.apiKey);
+  const res = await fetch(url.toString(), {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain' }, // ← ป้องกัน CORS preflight
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+async function testApi() {
+  const statusEl = document.getElementById('api-status');
+  statusEl.style.display = 'block';
+  statusEl.style.color = 'var(--muted)';
+  statusEl.textContent = '⏳ Testing connection...';
+  if (!CONFIG.apiUrl) { statusEl.style.color = '#f87171'; statusEl.textContent = '⚠ No API URL set'; return; }
+  try {
+    const r = await apiFetch({ action: 'getTransactions' });
+    if (r.success) { statusEl.style.color = '#34d399'; statusEl.textContent = '✓ Connected! Found ' + r.data.length + ' transactions'; }
+    else { statusEl.style.color = '#f87171'; statusEl.textContent = '✗ Error: ' + r.error; }
+  } catch(e) {
+    statusEl.style.color = '#f87171';
+    statusEl.textContent = '✗ Connection failed: ' + e.message;
+  }
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('#bottomnav .navbtn').forEach(n => {
+    n.classList.toggle('active', n.dataset.page === page);
+  });
+  const titles = { dashboard:'Dashboard', transactions:'รายการ', investments:'การลงทุน', goals:'เป้าหมาย', analytics:'วิเคราะห์', settings:'ตั้งค่า' };
+  document.getElementById('page-title').textContent = titles[page] || page;
+  window.scrollTo({ top:0, behavior:'smooth' });
+  document.querySelector('.main-content')?.scrollTo({ top:0, behavior:'smooth' });
+  if (page === 'dashboard')    renderDashboard();
+  if (page === 'transactions') renderTransactions();
+  if (page === 'investments')  renderInvestments();
+  if (page === 'goals')        renderGoals();
+  if (page === 'analytics')    renderAnalytics();
+  if (page === 'settings')     loadSettingsForm();
+}
+
+// sidebar ถูกแทนด้วย bottom-nav แล้ว — เก็บ stub กัน reference เก่า error
+function openSidebar() {}
+function closeSidebar() {}
+function toggleSidebar() {}
+
+// ============================================================
+// MODALS
+// ============================================================
+function openModal() {
+  editingTxId = null;
+  setType('Income');
+  document.getElementById('tx-amount').value = '';
+  document.getElementById('tx-note').value = '';
+  document.getElementById('tx-date').value = new Date().toISOString().slice(0,10);
+  document.querySelector('#modal-tx h2').textContent = 'Add Transaction';
+  document.getElementById('btn-add-tx').textContent = 'Add Transaction';
+  document.getElementById('btn-add-tx').dataset.label = 'Add Transaction';
+  document.getElementById('modal-tx').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-tx').classList.remove('open');
+  editingTxId = null;
+  document.querySelector('#modal-tx h2').textContent = 'Add Transaction';
+  document.getElementById('btn-add-tx').textContent = 'Add Transaction';
+  document.getElementById('btn-add-tx').dataset.label = 'Add Transaction';
+}
+function openInvestModal() { document.getElementById('inv-date').value = new Date().toISOString().slice(0,10); document.getElementById('modal-invest').classList.add('open'); }
+function closeInvestModal(){ document.getElementById('modal-invest').classList.remove('open'); }
+function openGoalModal()   { document.getElementById('modal-goal').classList.add('open'); }
+function closeGoalModal()  { document.getElementById('modal-goal').classList.remove('open'); }
+
+function setType(t) {
+  txType = t;
+  document.getElementById('type-income').classList.toggle('active', t === 'Income');
+  document.getElementById('type-expense').classList.toggle('active', t === 'Expense');
+}
+
+// ============================================================
+// TRANSACTIONS — เพิ่ม apiPost + loading state
+// ============================================================
+async function addTransaction() {
+  const amt  = parseFloat(document.getElementById('tx-amount').value);
+  const cat  = document.getElementById('tx-cat').value;
+  const date = document.getElementById('tx-date').value;
+  const note = document.getElementById('tx-note').value.trim().replace(/[=+\-@]/g,'');
+  if (!amt || amt <= 0) { toast('Please enter a valid amount', false); return; }
+  if (!date)            { toast('Please select a date', false); return; }
+
+  if (editingTxId) {
+    const tx = state.transactions.find(t => t.id === editingTxId);
+    if (!tx) return;
+    tx.type = txType; tx.category = cat; tx.amount = amt; tx.date = date; tx.note = note;
+    if (CONFIG.apiUrl) {
+      setLoading('btn-add-tx', true);
+      try {
+        const r = await apiPost({ action:'updateTransaction', ...tx });
+        if (!r.success) toast('Sync error: ' + r.error, false); else toast('Transaction updated & synced ✓');
+      } catch(e) { toast('Saved locally — sync failed', false); }
+      setLoading('btn-add-tx', false);
+    } else { toast('Transaction updated'); }
+    save(); closeModal(); renderTransactions(); renderDashboard();
+    return;
+  }
+
+  const tx = { id:uid(), created_at:new Date().toISOString(), date, type:txType, category:cat, amount:amt, note };
+
+  if (CONFIG.apiUrl) {
+    setLoading('btn-add-tx', true);
+    try {
+      const r = await apiPost({ action:'addTransaction', ...tx });
+      if (!r.success) { toast('API error: ' + r.error, false); setLoading('btn-add-tx', false); return; }
+      toast('Transaction saved to Sheet! ✓');
+    } catch(e) {
+      toast('API failed — saved locally only', false);
+    }
+    setLoading('btn-add-tx', false);
+  }
+
+  state.transactions.unshift(tx);
+  save();
+  spaceAddFX();
+  closeModal();
+  if (!CONFIG.apiUrl) toast('Transaction added (local)');
+  renderDashboard();
+}
+
+async function deleteTransaction(id) {
+  if (CONFIG.apiUrl) {
+    try { await apiPost({ action:'deleteTransaction', id }); } catch(e) {}
+  }
+  state.transactions = state.transactions.filter(t => t.id !== id);
+  save();
+  renderTransactions();
+  renderDashboard();
+  toast('Deleted');
+}
+
+function openEditTransaction(id) {
+  const tx = state.transactions.find(t => t.id === id);
+  if (!tx) return;
+  editingTxId = id;
+  setType(tx.type);
+  document.getElementById('tx-amount').value = tx.amount;
+  document.getElementById('tx-cat').value = tx.category;
+  document.getElementById('tx-date').value = tx.date;
+  document.getElementById('tx-note').value = tx.note || '';
+  document.querySelector('#modal-tx h2').textContent = 'Edit Transaction';
+  document.getElementById('btn-add-tx').textContent = 'Save Changes';
+  document.getElementById('btn-add-tx').dataset.label = 'Save Changes';
+  document.getElementById('modal-tx').classList.add('open');
+}
+
+// ============================================================
+// SLIP SCANNER — Gemini Vision
+// ============================================================
+let currentSlipFile = null;
+
+function openSlipModal() {
+  slipData = null;
+  currentSlipFile = null;
+  document.getElementById('slip-file-gallery').value = '';
+  document.getElementById('slip-file-camera').value = '';
+  document.getElementById('slip-preview').style.display = 'none';
+  document.getElementById('slip-result').style.display = 'none';
+  document.getElementById('slip-scanning').style.display = 'none';
+  document.getElementById('btn-scan-slip').disabled = true;
+  document.getElementById('btn-scan-slip').style.display = '';
+  document.getElementById('btn-fill-slip').style.display = 'none';
+  document.getElementById('modal-slip').classList.add('open');
+}
+
+function closeSlipModal() { document.getElementById('modal-slip').classList.remove('open'); }
+
+function slipDragOver(e, el) {
+  e.preventDefault();
+  el.style.borderColor = 'var(--accent)';
+  el.style.background = 'rgba(167,139,250,.06)';
+}
+function slipDragLeave(el) {
+  el.style.borderColor = 'var(--border)';
+  el.style.background = '';
+}
+function slipDrop(e, el) {
+  e.preventDefault();
+  slipDragLeave(el);
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) showSlipFile(file);
+  else toast('รองรับเฉพาะไฟล์รูปภาพ', false);
+}
+
+function previewSlip(input) {
+  const file = input.files[0];
+  if (!file) return;
+  showSlipFile(file);
+}
+
+function showSlipFile(file) {
+  currentSlipFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('slip-img').src = e.target.result;
+    document.getElementById('slip-preview').style.display = 'block';
+    document.getElementById('btn-scan-slip').disabled = false;
+    document.getElementById('slip-result').style.display = 'none';
+    document.getElementById('btn-fill-slip').style.display = 'none';
+    document.getElementById('btn-scan-slip').style.display = '';
+    slipData = null;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function scanSlip() {
+  if (!CONFIG.hasBackend) { toast('เชื่อมต่อ Backend URL ใน Settings ก่อน', false); return; }
+  const file = currentSlipFile;
+  if (!file) { toast('เลือกไฟล์ก่อน', false); return; }
+
+  document.getElementById('slip-scanning').style.display = 'block';
+  document.getElementById('btn-scan-slip').disabled = true;
+  document.getElementById('slip-result').style.display = 'none';
+
+  try {
+    const base64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+
+    const prompt = `คุณเป็น AI อ่านสลิปโอนเงิน ใบเสร็จ หรือรูปธุรกรรมการเงินภาษาไทย
+วิเคราะห์รูปแล้วดึงข้อมูล ตอบเป็น JSON เท่านั้น ห้ามมีข้อความอื่น:
+{
+  "amount": <จำนวนเงินเป็นตัวเลขล้วน ไม่มีเครื่องหมาย>,
+  "type": "<Income หรือ Expense — ได้รับเงิน=Income จ่ายเงิน=Expense>",
+  "category": "<เลือกจาก: Salary, Freelance, Food, Transport, Shopping, Bills, Education, Entertainment, Investment, Other>",
+  "date": "<YYYY-MM-DD หรือ null ถ้าไม่มี>",
+  "note": "<ชื่อผู้โอน ร้านค้า หรือรายละเอียดสั้นๆ ไม่เกิน 40 ตัวอักษร>"
+}`;
+
+    const resp = await apiPost({ action:'aiVision', prompt, imageBase64:base64, mimeType:file.type });
+    if (!resp.success) throw new Error(resp.error || 'อ่านสลิปไม่สำเร็จ');
+    const text = resp.data?.text || '';
+    const match = text.match(/\{[\s\S]*?\}/);
+    if (!match) throw new Error('ไม่พบข้อมูลในสลิป กรุณาถ่ายภาพให้ชัดขึ้น');
+    slipData = JSON.parse(match[0]);
+
+    const isInc = slipData.type === 'Income';
+    const resEl = document.getElementById('slip-result');
+    resEl.innerHTML = `
+      <div style="font-size:.72rem;font-weight:600;color:var(--muted);margin-bottom:.6rem">✅ ข้อมูลที่อ่านได้</div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:.35rem .85rem;font-size:.83rem;align-items:center">
+        <span style="color:var(--muted)">ประเภท</span><span style="color:${isInc?'#34d399':'#f87171'};font-weight:600">${slipData.type}</span>
+        <span style="color:var(--muted)">จำนวน</span><span style="font-weight:700;font-size:.95rem">${CONFIG.currency}${Number(slipData.amount||0).toLocaleString()}</span>
+        <span style="color:var(--muted)">หมวด</span><span>${catEmoji[slipData.category]||'📦'} ${slipData.category||'Other'}</span>
+        <span style="color:var(--muted)">วันที่</span><span>${slipData.date||'ไม่ระบุ'}</span>
+        <span style="color:var(--muted)">หมายเหตุ</span><span style="color:var(--text)">${slipData.note||'-'}</span>
+      </div>`;
+    resEl.style.display = 'block';
+    document.getElementById('btn-fill-slip').style.display = '';
+    document.getElementById('btn-scan-slip').style.display = 'none';
+
+  } catch(e) {
+    toast('วิเคราะห์ไม่สำเร็จ: ' + e.message, false);
+    document.getElementById('btn-scan-slip').disabled = false;
+  } finally {
+    document.getElementById('slip-scanning').style.display = 'none';
+  }
+}
+
+function fillFromSlip() {
+  if (!slipData) return;
+  closeSlipModal();
+  setType(slipData.type === 'Income' ? 'Income' : 'Expense');
+  if (slipData.amount) document.getElementById('tx-amount').value = slipData.amount;
+  const catOpt = document.querySelector(`#tx-cat option[value="${slipData.category}"]`);
+  if (catOpt) document.getElementById('tx-cat').value = slipData.category;
+  document.getElementById('tx-date').value = slipData.date || new Date().toISOString().slice(0,10);
+  if (slipData.note) document.getElementById('tx-note').value = slipData.note;
+  editingTxId = null;
+  document.querySelector('#modal-tx h2').textContent = 'Add Transaction';
+  document.getElementById('btn-add-tx').textContent = 'Add Transaction';
+  document.getElementById('btn-add-tx').dataset.label = 'Add Transaction';
+  document.getElementById('modal-tx').classList.add('open');
+  toast('เติมข้อมูลจากสลิปแล้ว — ตรวจสอบก่อนกด Add ✓');
+}
+
+function renderTransactions() {
+  const search = (document.getElementById('tx-search')?.value || '').toLowerCase();
+  const ftype  = document.getElementById('tx-filter-type')?.value || '';
+  const fcat   = document.getElementById('tx-filter-cat')?.value || '';
+
+  const cats = [...new Set(state.transactions.map(t => t.category))];
+  const cfEl = document.getElementById('tx-filter-cat');
+  if (cfEl) {
+    const cur = cfEl.value;
+    cfEl.innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option ${c===cur?'selected':''}>${c}</option>`).join('');
+  }
+
+  let txs = state.transactions.filter(t => {
+    if (ftype && t.type !== ftype) return false;
+    if (fcat  && t.category !== fcat) return false;
+    if (search && !t.category.toLowerCase().includes(search) && !(t.note||'').toLowerCase().includes(search) && !String(t.amount).includes(search)) return false;
+    return true;
+  });
+
+  const el = document.getElementById('tx-list');
+  if (!txs.length) { el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">No transactions found</div>'; return; }
+  el.innerHTML = txs.map(t => txRow(t, true)).join('');
+}
+
+function txRow(t, showDelete=false) {
+  const isInc = t.type === 'Income';
+  return `<div class="tx-row">
+    <div class="tx-icon" style="background:${isInc?'rgba(52,211,153,.1)':'rgba(248,113,113,.1)'}">${catEmoji[t.category]||'📦'}</div>
+    <div>
+      <div style="font-size:.85rem;font-weight:500">${t.category}</div>
+      <div style="font-size:.72rem;color:var(--muted)">${t.note||t.date}</div>
+    </div>
+    <div>
+      <div style="font-size:.9rem;font-weight:600;color:${isInc?'#34d399':'#f87171'}">${isInc?'+':'-'}${fmt(t.amount)}</div>
+      <div style="font-size:.7rem;color:var(--muted);text-align:right">${t.date}</div>
+    </div>
+    ${showDelete ? `<div style="display:flex;gap:.3rem">
+      <button onclick="openEditTransaction('${t.id}')" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);color:var(--accent);border-radius:8px;padding:.3rem .5rem;cursor:pointer;font-size:.8rem">✏️</button>
+      <button onclick="deleteTransaction('${t.id}')" style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:#f87171;border-radius:8px;padding:.3rem .5rem;cursor:pointer;font-size:.8rem">✕</button>
+    </div>` : ''}
+  </div>`;
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+// แสดง badge เปรียบเทียบกับเดือนก่อน
+function setDelta(elId, cur, prev, higherIsGood){
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (prev <= 0){ el.style.display = 'none'; return; }
+  const pct = Math.round((cur - prev) / prev * 100);
+  el.style.display = 'inline-flex';
+  if (pct === 0){ el.className = 'delta flat'; el.textContent = '± 0% จากเดือนก่อน'; return; }
+  const up = pct > 0;
+  const good = higherIsGood ? up : !up;
+  el.className = 'delta ' + (up ? 'up' : 'down') + (good ? ' good' : ' bad');
+  el.textContent = (up ? '↑ ' : '↓ ') + Math.abs(pct) + '% จากเดือนก่อน';
+}
+
+function renderDashboard() {
+  if (selectedMonth > thisMonth()) selectedMonth = thisMonth();
+  const cur  = selectedMonth;
+  const prev = addMonths(cur, -1);
+
+  // label เดือน + ปุ่มเลื่อน
+  const lbl = monthLabelTH(cur);
+  const mlEl = document.getElementById('dash-month-label'); if (mlEl) mlEl.textContent = lbl;
+  const pillEl = document.getElementById('month-pill');     if (pillEl) pillEl.textContent = lbl;
+  const nextBtn = document.getElementById('month-next-btn'); if (nextBtn) nextBtn.disabled = (cur >= thisMonth());
+
+  const mTx  = state.transactions.filter(t => t.date && t.date.startsWith(cur));
+  const pTx  = state.transactions.filter(t => t.date && t.date.startsWith(prev));
+  const sum  = (arr, type) => arr.filter(t => t.type===type).reduce((s,t)=>s+Number(t.amount||0), 0);
+
+  const income   = sum(mTx,'Income');
+  const expense  = sum(mTx,'Expense');
+  const pIncome  = sum(pTx,'Income');
+  const pExpense = sum(pTx,'Expense');
+  const totalInvest = state.investments.reduce((s,i) => s+Number(i.amount||0), 0);
+  const savings  = income > 0 ? Math.max(0, Math.round((income-expense)/income*100)) : 0;
+  const pSavings = pIncome > 0 ? Math.max(0, Math.round((pIncome-pExpense)/pIncome*100)) : 0;
+
+  document.getElementById('stat-spent').textContent       = fmt(expense);
+  document.getElementById('stat-spent-count').textContent = mTx.filter(t=>t.type==='Expense').length + ' รายการ';
+  document.getElementById('stat-income').textContent      = fmt(income);
+  document.getElementById('stat-income-count').textContent= mTx.filter(t=>t.type==='Income').length + ' แหล่ง';
+  document.getElementById('stat-invest').textContent      = fmt(totalInvest);
+  document.getElementById('stat-invest-count').textContent= state.investments.length + ' รายการ';
+  document.getElementById('stat-savings').textContent     = savings + '%';
+
+  // เปรียบเทียบกับเดือนก่อน
+  setDelta('delta-spent',  expense, pExpense, false);   // จ่ายเพิ่ม = แย่
+  setDelta('delta-income', income,  pIncome,  true);    // รับเพิ่ม = ดี
+  setDelta('delta-savings', savings, pSavings, true);   // ออมเพิ่ม = ดี
+
+  // รายการล่าสุดของเดือนที่เลือก — เรียงตามวันที่ล่าสุดจริง
+  const recent = [...mTx].sort((a,b) => (b.date+(b.created_at||'')).localeCompare(a.date+(a.created_at||''))).slice(0,6);
+  const recentHtml = recent.map(t => txRow(t,false)).join('')
+    || '<div style="text-align:center;padding:2rem;color:var(--muted)">ยังไม่มีรายการในเดือนนี้</div>';
+  document.getElementById('recent-tx').innerHTML = recentHtml;
+
+  // Donut
+  const cats = {};
+  mTx.filter(t=>t.type==='Expense').forEach(t => { cats[t.category]=(cats[t.category]||0)+t.amount; });
+  const keys = Object.keys(cats);
+  const colors = ['#a78bfa','#7c3aed','#f87171','#fbbf24','#34d399','#60a5fa','#fb923c','#a3e635','#f472b6'];
+  if (charts.cat) charts.cat.destroy();
+  const catCtx = document.getElementById('cat-chart')?.getContext('2d');
+  if (catCtx) {
+    charts.cat = new Chart(catCtx, {
+      type:'doughnut',
+      data:{ labels: keys.length?keys:['No data'], datasets:[{ data:keys.length?keys.map(k=>cats[k]):[1], backgroundColor:keys.length?colors.slice(0,keys.length):['#2a2a38'], borderWidth:0, hoverOffset:4 }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:'#8b8aa0', font:{size:10}, boxWidth:10 } } } }
+    });
+  }
+
+  // Bar
+  if (charts.bar) charts.bar.destroy();
+  const barCtx = document.getElementById('bar-chart')?.getContext('2d');
+  if (barCtx) {
+    const months=[],inc=[],exp=[];
+    const TH_SHORT=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    for (let i=5;i>=0;i--) {
+      const m=addMonths(selectedMonth,-i);          // หน้าต่าง 6 เดือน จบที่เดือนที่เลือก
+      months.push(TH_SHORT[Number(m.slice(5,7))-1]);
+      const mData=state.transactions.filter(t=>t.date&&t.date.startsWith(m));
+      inc.push(mData.filter(t=>t.type==='Income').reduce((s,t)=>s+Number(t.amount||0),0));
+      exp.push(mData.filter(t=>t.type==='Expense').reduce((s,t)=>s+Number(t.amount||0),0));
+    }
+    charts.bar = new Chart(barCtx, {
+      type:'bar',
+      data:{ labels:months, datasets:[
+        { label:'รายรับ',  data:inc, backgroundColor:'rgba(52,211,153,.7)', borderRadius:4 },
+        { label:'รายจ่าย', data:exp, backgroundColor:'rgba(248,113,113,.7)', borderRadius:4 }
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:'#8b8aa0', font:{size:10} } } }, scales:{ x:{ grid:{display:false}, ticks:{color:'#8b8aa0',font:{size:10}} }, y:{ grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#8b8aa0',font:{size:10},callback:v=>CONFIG.currency+v.toLocaleString()} } } }
+    });
+  }
+}
+
+// ============================================================
+// SYNC FROM GOOGLE SHEETS
+// ============================================================
+let isSyncing = false;
+
+async function syncFromSheet() {
+  if (!CONFIG.apiUrl) { toast('ใส่ Apps Script URL ใน Settings ก่อน', false); return; }
+  if (isSyncing) return;
+  isSyncing = true;
+
+  const btn = document.getElementById('btn-sync');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing...'; }
+
+  try {
+    const [txRes, invRes, goalRes] = await Promise.all([
+      apiFetch({ action: 'getTransactions' }),
+      apiFetch({ action: 'getInvestments' }),
+      apiFetch({ action: 'getGoals' }),
+    ]);
+
+    let updated = false;
+
+    if (txRes.success && Array.isArray(txRes.data)) {
+      // merge: Sheet เป็น source of truth, ไม่ overwrite local ที่ยังไม่ได้ sync
+      const sheetIds = new Set(txRes.data.map(t => t.id));
+      const localOnly = state.transactions.filter(t => !sheetIds.has(t.id));
+      state.transactions = [
+        ...txRes.data.map(t => ({
+          ...t,
+          amount: Number(t.amount)
+        })),
+        ...localOnly
+      ].sort((a,b) => b.created_at?.localeCompare(a.created_at));
+      updated = true;
+    }
+
+    if (invRes.success && Array.isArray(invRes.data)) {
+      const sheetIds = new Set(invRes.data.map(i => i.id));
+      const localOnly = state.investments.filter(i => !sheetIds.has(i.id));
+      state.investments = [
+        ...invRes.data.map(i => ({ ...i, amount: Number(i.amount) })),
+        ...localOnly
+      ].sort((a,b) => b.created_at?.localeCompare(a.created_at));
+      updated = true;
+    }
+
+    if (goalRes.success && Array.isArray(goalRes.data)) {
+      const sheetIds = new Set(goalRes.data.map(g => g.id));
+      const localOnly = state.goals.filter(g => !sheetIds.has(g.id));
+      state.goals = [
+        ...goalRes.data.map(g => ({
+          ...g,
+          target_amount:  Number(g.target_amount),
+          current_amount: Number(g.current_amount)
+        })),
+        ...localOnly
+      ];
+      updated = true;
+    }
+
+    if (updated) {
+      save();
+      renderDashboard();
+      toast(`✓ Synced — ${state.transactions.length} transactions, ${state.investments.length} investments, ${state.goals.length} goals`);
+    }
+
+  } catch(e) {
+    toast('Sync failed: ' + e.message, false);
+  } finally {
+    isSyncing = false;
+    if (btn) { btn.disabled = false; btn.textContent = '☁️ Sync from Sheet'; }
+  }
+}
+
+// sync อัตโนมัติตอน load ถ้ามี API URL
+async function autoSyncOnLoad() {
+  if (!CONFIG.apiUrl) return;
+  const btn = document.getElementById('btn-sync');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Auto syncing...'; }
+  isSyncing = false; // reset ก่อน
+  await syncFromSheet();
+}
+
+
+const PORTFOLIO_TICKERS = [
+  { ticker:'NVDA',  name:'NVIDIA',    shares:null, currency:'USD', flag:'🇺🇸' },
+  { ticker:'TSM',   name:'TSMC ADR',  shares:null, currency:'USD', flag:'🇹🇼' },
+  { ticker:'SPUS',  name:'SP Funds S&P 500 ETF (Halal)', shares:null, currency:'USD', flag:'🌙' },
+  { ticker:'SPTE',  name:'SP Funds S&P Global Tech ETF (Halal)', shares:null, currency:'USD', flag:'🌙' },
+];
+
+// แยก ticker จาก note (ผู้ใช้กรอกชื่อหุ้นล้วน ๆ เช่น "NVDA" หรือ "BRK.B")
+function extractTicker(note) {
+  if (!note) return null;
+  const m = String(note).trim().toUpperCase().match(/^[A-Z][A-Z0-9.\-]{0,9}/);
+  return m ? m[0] : null;
+}
+
+function getUserHeldTickers() {
+  // ดึง ticker จาก note ของ investment ที่ผู้ใช้ใส่ไว้ (เฉพาะที่ผู้ใช้ถืออยู่จริง)
+  const map = new Map();
+  state.investments.forEach(i => {
+    const t = extractTicker(i.note);
+    if (!t) return;
+    if (!map.has(t)) {
+      const known = PORTFOLIO_TICKERS.find(p => p.ticker === t);
+      map.set(t, known || { ticker:t, name:t, shares:null, currency:'USD', flag:'📈' });
+    }
+  });
+  return Array.from(map.values());
+}
+
+let liveQuotes = {};        // { NVDA: { c, d, dp, h, l, o, pc }, ... }
+let usdThbRate = 35.5;      // fallback rate, updated from API
+let quoteRefreshTimer = null;
+let aiAnalysisCache = JSON.parse(localStorage.getItem('ai_analysis_cache') || '{}');
+const AI_CACHE_TTL = 3600000; // 1 ชั่วโมง
+const safeId = s => String(s).replace(/[^A-Za-z0-9]/g,'_');
+
+async function fetchUSDTHB() {
+  try {
+    const r = await apiFetch({ action:'fxRates', base:'USD' });
+    const d = r.success ? r.data : {};
+    if (d.quote && d.quote.THB) usdThbRate = d.quote.THB;
+  } catch(e) {}
+}
+
+async function fetchQuote(ticker) {
+  const r = await apiFetch({ action:'quote', symbol:ticker });
+  return r.success ? r.data : {};
+}
+
+async function fetchCandles(ticker) {
+  const now   = Math.floor(Date.now()/1000);
+  const from  = now - 60*60*24*30; // 30 วัน
+  const r = await apiFetch({ action:'candle', symbol:ticker, from, to:now });
+  return r.success ? r.data : {};
+}
+
+async function refreshAllQuotes() {
+  if (!CONFIG.hasBackend) return;
+  await fetchUSDTHB();
+  const heldTickers = getUserHeldTickers();
+  for (const p of heldTickers) {
+    try {
+      const q = await fetchQuote(p.ticker);
+      if (q && q.c) liveQuotes[p.ticker] = q;
+    } catch(e) {}
+    await new Promise(res => setTimeout(res, 300)); // throttle
+  }
+  renderMarketCards();
+  renderPortfolioSummary();
+}
+
+function startAutoRefresh() {
+  refreshAllQuotes();
+  clearInterval(quoteRefreshTimer);
+  quoteRefreshTimer = setInterval(refreshAllQuotes, 60000); // ทุก 1 นาที
+}
+
+// ============================================================
+// PORTFOLIO SUMMARY — คำนวณกำไร/ขาดทุนจาก holdings
+// ============================================================
+function getHoldings() {
+  // รวม investment ตาม ticker ที่อยู่ใน note (กลุ่มเดียวกับ getUserHeldTickers)
+  const result = {};
+  state.investments.forEach(i => {
+    const t = extractTicker(i.note);
+    if (!t) return;
+    if (!result[t]) result[t] = { invested: 0, entries: 0 };
+    result[t].invested += Number(i.amount);
+    result[t].entries += 1;
+  });
+  return result;
+}
+
+// ============================================================
+// MARKET DATA
+// ============================================================
+const MARKET_DATA = [
+  {
+    ticker:'NVDA', name:'NVIDIA Corporation', type:'หุ้นสหรัฐ', flag:'🇺🇸',
+    pe_static:40.73, rating:'Strong Buy', ratingColor:'#34d399',
+    earningsDate:'20 พ.ค. 2026',
+    highlights:[
+      'Goldman Sachs คาด "major re-rating" ก่อน earnings 20 พ.ค.',
+      'ลงทุน $2.1B ใน IREN Data Center — สัญญา $3.4B',
+      'SoftBank เจรจาสร้าง AI servers ในญี่ปุ่น',
+      'ความเสี่ยง: ชิปถูกสงสัยลักลอบขายผ่านไทยไป Alibaba',
+    ],
+    risk:'สูง', riskColor:'#f87171',
+    summary:'King of AI chips — earnings สำคัญมาก 20 พ.ค. 2026',
+  },
+  {
+    ticker:'TSM', name:'Taiwan Semiconductor (TSMC)', type:'หุ้นไต้หวัน (ADR)', flag:'🇹🇼',
+    pe_static:33.95, rating:'Strong Buy', ratingColor:'#34d399',
+    earningsDate:'16 ก.ค. 2026',
+    highlights:[
+      'รายได้ Q1 2026 โต 35% YoY — แข็งแกร่งมาก',
+      'รายได้เดือน เม.ย. NT$410B โต 17.5% YoY',
+      'กำไร Q1 โต ~60% YoY สู่ $20B+',
+      'JV กับ Sony พัฒนา next-gen image sensors ในญี่ปุ่น',
+    ],
+    risk:'ปานกลาง', riskColor:'#fbbf24',
+    summary:'ผู้ผลิตชิปเบอร์ 1 โลก — YTD +31% แข็งกว่า NVDA ปีนี้',
+  },
+  {
+    ticker:'SPTE', name:'SP Funds S&P Global Tech ETF', type:'ETF ฮาลาล (Shariah)', flag:'🌙',
+    pe_static:null, rating:'Halal ✓', ratingColor:'#a78bfa',
+    earningsDate:'ไม่มี (ETF)',
+    highlights:[
+      'ผ่าน Shariah screening — ไม่มีดอกเบี้ย ไม่มีหุ้นต้องห้าม',
+      '~47% international stocks (global tech)',
+      'ครอบคลุม AI, cloud, e-commerce, healthtech ทั่วโลก',
+      'Expense ratio 0.55% — แข่งขันได้กับ ESG ETF ทั่วไป',
+    ],
+    risk:'ปานกลาง', riskColor:'#fbbf24',
+    summary:'ทางเลือกฮาลาลเทคโนโลยีระดับโลก — เหมาะลงทุนระยะยาว DCA',
+  },
+];
+
+function renderPortfolioSummary() {
+  const el = document.getElementById('portfolio-summary');
+  if (!el) return;
+  const holdings = getHoldings();
+  let totalInvestedTHB = 0, totalValueTHB = 0, hasAny = false;
+
+  const rows = getUserHeldTickers().map(p => {
+    const q = liveQuotes[p.ticker];
+    const h = holdings[p.ticker];
+    if (!q || !q.c || !h.invested) return null;
+    hasAny = true;
+    // คำนวณจำนวนหุ้นโดย assume ซื้อ avg ราคาปัจจุบัน (ถ้าไม่ได้ระบุจำนวนหุ้น)
+    const priceTHB     = q.c * usdThbRate;
+    const prevTHB      = q.pc * usdThbRate;
+    const changeAmt    = (q.c - q.pc);
+    const changePct    = q.dp;
+    // ใช้จำนวนเงินที่ลงทุนเป็น THB หาร ราคา THB = จำนวนหุ้น (approximate)
+    const shares       = h.invested / priceTHB;
+    const currentVal   = shares * priceTHB;
+    const prevVal      = shares * prevTHB;
+    const pnlToday     = currentVal - prevVal;
+    totalInvestedTHB  += h.invested;
+    totalValueTHB     += currentVal;
+    return { p, q, h, priceTHB, changePct, changeAmt, shares, currentVal, pnlToday };
+  }).filter(Boolean);
+
+  if (!hasAny) {
+    el.innerHTML = `<div style="color:var(--muted);font-size:.8rem;padding:.75rem;text-align:center">
+      ${CONFIG.hasBackend ? 'ยังไม่พบ investment — เพิ่ม investment แล้วใส่ ticker ในช่อง Note เช่น "NVDA" หรือ "SPUS"<br><span style="font-size:.72rem">รองรับทุก ticker ที่อยู่บน Finnhub (US stocks/ETFs)</span>' : '⚙️ เชื่อมต่อ Backend URL ในหน้า Settings เพื่อดูราคา real-time'}
+    </div>`;
+    return;
+  }
+
+  const totalPnL     = totalValueTHB - totalInvestedTHB;
+  const totalPnLPct  = totalInvestedTHB ? (totalPnL/totalInvestedTHB*100) : 0;
+  const todayPnL     = rows.reduce((s,r) => s+(r?.pnlToday||0), 0);
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin-bottom:.75rem">
+      <div style="background:var(--bg);border-radius:10px;padding:.65rem .75rem;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted)">มูลค่าพอร์ต</div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--accent)">${CONFIG.currency}${Math.round(totalValueTHB).toLocaleString()}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:.65rem .75rem;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted)">กำไร/ขาดทุน</div>
+        <div style="font-size:1.1rem;font-weight:700;color:${totalPnL>=0?'#34d399':'#f87171'}">${totalPnL>=0?'+':''}${CONFIG.currency}${Math.round(Math.abs(totalPnL)).toLocaleString()}</div>
+        <div style="font-size:.65rem;color:${totalPnL>=0?'#34d399':'#f87171'}">${totalPnLPct>=0?'+':''}${totalPnLPct.toFixed(2)}%</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:.65rem .75rem;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted)">วันนี้ +/-</div>
+        <div style="font-size:1.1rem;font-weight:700;color:${todayPnL>=0?'#34d399':'#f87171'}">${todayPnL>=0?'+':''}${CONFIG.currency}${Math.round(Math.abs(todayPnL)).toLocaleString()}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:.65rem .75rem;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted)">USD/THB</div>
+        <div style="font-size:1.1rem;font-weight:700">${usdThbRate.toFixed(2)}</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.4rem">
+      ${rows.map(r => `
+        <div style="display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:.6rem;padding:.6rem .75rem;background:var(--bg);border-radius:10px">
+          <div style="font-size:1rem">${r.p.flag}</div>
+          <div>
+            <div style="font-size:.82rem;font-weight:600">${r.p.ticker} <span style="font-size:.65rem;color:var(--muted);font-weight:400">${r.p.name}</span></div>
+            <div style="font-size:.68rem;color:var(--muted)">${r.q.c.toFixed(2)} · ${r.shares.toFixed(3)} หุ้น (approx)</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:.85rem;font-weight:600">${CONFIG.currency}${Math.round(r.currentVal).toLocaleString()}</div>
+            <div style="font-size:.68rem;color:${r.pnlToday>=0?'#34d399':'#f87171'}">${r.pnlToday>=0?'+':''}${CONFIG.currency}${Math.round(Math.abs(r.pnlToday)).toLocaleString()} วันนี้</div>
+          </div>
+          <div style="font-size:.78rem;font-weight:700;color:${r.changePct>=0?'#34d399':'#f87171'};min-width:50px;text-align:right">
+            ${r.changePct>=0?'+':''}${r.changePct?.toFixed(2)}%
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="font-size:.62rem;color:var(--muted);text-align:right;margin-top:.4rem">
+      อัปเดตทุก 1 นาที · Finnhub · ${new Date().toLocaleTimeString('th-TH')}
+    </div>
+  `;
+}
+
+function renderMarketCards() {
+  const el = document.getElementById('market-cards');
+  if (!el) return;
+
+  // ดึงรายการ ticker ที่ผู้ใช้ถืออยู่ (จาก note ของ investment)
+  const held = getUserHeldTickers();
+  if (!held.length) {
+    el.innerHTML = `<div style="grid-column:1/-1;background:var(--surface2);border:1px dashed var(--border);border-radius:14px;padding:1.25rem;text-align:center;color:var(--muted);font-size:.8rem">
+      ยังไม่มีหุ้นในพอร์ต — เพิ่ม investment พร้อมใส่ ticker ในช่อง Note เช่น <b style="color:var(--accent)">NVDA</b> หรือ <b style="color:var(--accent)">SPUS</b><br>
+      <span style="font-size:.7rem">ระบบจะดึงราคา real-time และวิเคราะห์เฉพาะหุ้นที่คุณถือ</span>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = held.map(p => {
+    // ดู MARKET_DATA สำหรับวิเคราะห์รวยๆ ถ้าไม่มี ใช้ข้อมูลพื้นฐาน
+    const s = MARKET_DATA.find(m => m.ticker === p.ticker) || {
+      ticker: p.ticker, name: p.name, type: '—', flag: p.flag || '📈',
+      pe_static: null, rating: 'N/A', ratingColor: 'var(--muted)',
+      earningsDate: '—', highlights: [], risk: '—', riskColor: 'var(--muted)',
+      summary: 'ไม่มีบทวิเคราะห์ — แสดงเฉพาะราคา real-time'
+    };
+    const q = liveQuotes[p.ticker];
+    const hasLive = q && q.c;
+    return `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.65rem">
+        <div>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <span style="font-size:.9rem">${s.flag||''}</span>
+            <span style="font-size:1rem;font-weight:700;color:var(--accent)">${s.ticker}</span>
+            <span style="font-size:.62rem;background:rgba(167,139,250,.12);color:var(--accent);border-radius:6px;padding:.1rem .45rem;font-weight:600">${s.type}</span>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.1rem">${s.name}</div>
+        </div>
+        <span style="font-size:.68rem;font-weight:600;padding:.2rem .55rem;border-radius:6px;background:rgba(52,211,153,.08);color:${s.ratingColor}">${s.rating}</span>
+      </div>
+
+      ${hasLive ? `
+      <div style="display:flex;align-items:baseline;gap:.5rem;margin-bottom:.6rem">
+        <span style="font-size:1.4rem;font-weight:700">${q.c.toFixed(2)}</span>
+        <span style="font-size:.85rem;font-weight:700;color:${q.dp>=0?'#34d399':'#f87171'}">${q.dp>=0?'+':''}${q.dp?.toFixed(2)}%</span>
+        <span style="font-size:.68rem;color:${q.d>=0?'#34d399':'#f87171'}">${q.d>=0?'+':''}${q.d?.toFixed(2)}</span>
+        <span style="margin-left:auto;font-size:.62rem;color:var(--muted);background:rgba(52,211,153,.08);padding:.1rem .4rem;border-radius:5px">🟢 LIVE</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.3rem;margin-bottom:.65rem">
+        <div style="background:var(--bg);border-radius:8px;padding:.35rem .4rem;text-align:center">
+          <div style="font-size:.58rem;color:var(--muted)">เปิด</div>
+          <div style="font-size:.75rem;font-weight:600">${q.o?.toFixed(2)}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:.35rem .4rem;text-align:center">
+          <div style="font-size:.58rem;color:var(--muted)">สูง</div>
+          <div style="font-size:.75rem;font-weight:600;color:#34d399">${q.h?.toFixed(2)}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:.35rem .4rem;text-align:center">
+          <div style="font-size:.58rem;color:var(--muted)">ต่ำ</div>
+          <div style="font-size:.75rem;font-weight:600;color:#f87171">${q.l?.toFixed(2)}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:.35rem .4rem;text-align:center">
+          <div style="font-size:.58rem;color:var(--muted)">P/E</div>
+          <div style="font-size:.75rem;font-weight:600">${s.pe_static ? s.pe_static+'x' : 'ETF'}</div>
+        </div>
+      </div>
+      <div style="margin-bottom:.65rem">
+        <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);margin-bottom:.25rem">
+          <span>ต่ำสุด ${q.l?.toFixed(2)}</span><span>สูงสุด ${q.h?.toFixed(2)}</span>
+        </div>
+        <div style="height:4px;background:var(--border);border-radius:99px;overflow:hidden">
+          <div style="height:100%;background:linear-gradient(90deg,#f87171,#fbbf24,#34d399);border-radius:99px;width:${Math.min(100,Math.max(0,((q.c-q.l)/(q.h-q.l||1)*100))).toFixed(0)}%"></div>
+        </div>
+        <div style="font-size:.6rem;color:var(--muted);margin-top:.2rem;text-align:center">ราคาปัจจุบันอยู่ในช่วงวันนี้ = ${Math.min(100,Math.max(0,((q.c-q.l)/(q.h-q.l||1)*100))).toFixed(0)}%</div>
+      </div>` : `
+      <div style="background:var(--bg);border-radius:8px;padding:.6rem .75rem;margin-bottom:.65rem;display:flex;align-items:center;gap:.5rem">
+        ${CONFIG.hasBackend ? '<span style="font-size:.75rem;color:var(--muted)">⏳ กำลังโหลดราคา...</span>' : '<span style="font-size:.75rem;color:var(--muted)">⚙️ เชื่อมต่อ Backend URL ในหน้า Settings</span>'}
+      </div>`}
+
+      ${s.highlights && s.highlights.length ? `
+      <div style="font-size:.72rem;color:var(--text);background:var(--bg);border-radius:8px;padding:.5rem .65rem;margin-bottom:.6rem;line-height:1.7">
+        ${s.highlights.map(h=>`• ${h}`).join('<br>')}
+      </div>` : ''}
+      ${s.risk && s.risk !== '—' ? `
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:.35rem">
+          <span style="font-size:.65rem;color:var(--muted)">ความเสี่ยง:</span>
+          <span style="font-size:.65rem;font-weight:700;color:${s.riskColor}">${s.risk}</span>
+        </div>
+        <span style="font-size:.65rem;color:var(--muted)">${s.earningsDate && s.earningsDate !== 'ไม่มี (ETF)' && s.earningsDate !== '—' ? 'Earnings: '+s.earningsDate : ''}</span>
+      </div>` : ''}
+      <div style="margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--border);font-size:.72rem;color:var(--accent);font-style:italic">
+        💡 ${s.summary}
+      </div>
+      <button id="btn-ai-${safeId(s.ticker)}" onclick="analyzeStockWithAI('${s.ticker}')" style="margin-top:.6rem;width:100%;background:linear-gradient(135deg,rgba(167,139,250,.18),rgba(167,139,250,.08));border:1px solid rgba(167,139,250,.35);color:var(--accent);border-radius:8px;padding:.45rem .6rem;cursor:pointer;font-size:.72rem;font-weight:600;transition:all .15s">🤖 วิเคราะห์ด้วย AI</button>
+      <div id="ai-result-${safeId(s.ticker)}" style="display:none"></div>
+    </div>`
+  }).join('');
+}
+
+// ============================================================
+// AI ANALYSIS (Gemini)
+// ============================================================
+async function analyzeStockWithAI(ticker) {
+  if (!CONFIG.hasBackend) {
+    toast('เชื่อมต่อ Backend URL ในหน้า Settings ก่อน', false);
+    return;
+  }
+  const sid = safeId(ticker);
+  const btn = document.getElementById(`btn-ai-${sid}`);
+  const container = document.getElementById(`ai-result-${sid}`);
+  if (!btn || !container) return;
+
+  // ใช้ cache ภายใน 1 ชั่วโมง
+  const cached = aiAnalysisCache[ticker];
+  if (cached && (Date.now() - cached.timestamp) < AI_CACHE_TTL) {
+    renderAIAnalysis(ticker, cached.data, true);
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Gemini กำลังคิด...';
+  container.style.display = 'block';
+  container.innerHTML = `<div style="margin-top:.6rem;padding:.75rem;background:var(--bg);border-radius:8px;font-size:.72rem;color:var(--muted);text-align:center">🤖 กำลังวิเคราะห์...</div>`;
+
+  try {
+    // รวบรวมข้อมูล context
+    const q = liveQuotes[ticker] || {};
+    const holdings = getHoldings();
+    const h = holdings[ticker] || { invested:0, entries:0 };
+    const totalInvested = Object.values(holdings).reduce((s,x) => s + (x.invested||0), 0);
+    const portfolioPct = totalInvested ? (h.invested / totalInvested * 100).toFixed(1) : '0';
+    const heldTickers = Object.keys(holdings);
+    const known = MARKET_DATA.find(m => m.ticker === ticker);
+
+    const ctxQuote = q.c
+      ? `- ราคาปัจจุบัน: $${q.c?.toFixed(2)} (เปลี่ยน ${q.dp?.toFixed(2)}% / $${q.d?.toFixed(2)})
+- ราคาเปิด: $${q.o?.toFixed(2)} | ปิดเมื่อวาน: $${q.pc?.toFixed(2)}
+- สูง/ต่ำวันนี้: $${q.h?.toFixed(2)} / $${q.l?.toFixed(2)}`
+      : '- ไม่มีข้อมูลราคา real-time';
+
+    const ctxKnown = known ? `\n- P/E: ${known.pe_static || 'N/A'} | Analyst rating: ${known.rating}
+- ประเภท: ${known.type}${known.highlights?.length ? '\n\nข่าว/highlights ล่าสุด:\n' + known.highlights.map(x=>'- '+x).join('\n') : ''}` : '';
+
+    const prompt = `คุณเป็นนักวิเคราะห์การลงทุนภาษาไทย วิเคราะห์หุ้น ${ticker} (${known?.name || ticker}) ให้ผู้ใช้แบบกระชับและตรงประเด็น
+
+ข้อมูลตลาดปัจจุบัน:
+${ctxQuote}${ctxKnown}
+
+พอร์ตของผู้ใช้:
+- ลงทุนใน ${ticker} แล้ว ${h.entries} ครั้ง มูลค่ารวม ฿${(h.invested||0).toLocaleString()}
+- คิดเป็น ${portfolioPct}% ของพอร์ตรวม ฿${totalInvested.toLocaleString()}
+- หุ้นทั้งหมดที่ถืออยู่: ${heldTickers.join(', ')} (${heldTickers.length} ตัว)
+- USD/THB: ${usdThbRate.toFixed(2)}
+
+ตอบเป็น JSON ภาษาไทยเท่านั้น ห้ามมีข้อความอื่นนอกเหนือจาก JSON:
+{
+  "status": "<สรุปสถานะหุ้นตอนนี้ 1-2 ประโยค>",
+  "recommendation": "<BUY หรือ HOLD หรือ SELL>",
+  "recommendationReason": "<เหตุผลของคำแนะนำ 1-2 ประโยค กระชับ>",
+  "risks": ["<ความเสี่ยงข้อ 1>", "<ข้อ 2>", "<ข้อ 3 ถ้ามี>"],
+  "portfolioFit": "<วิเคราะห์สัดส่วน ${portfolioPct}% ในพอร์ตเหมาะสมไหม diversification ดีพอไหม 1-2 ประโยค>"
+}
+
+หมายเหตุ: นี่เป็นการวิเคราะห์เพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุนจริง`;
+
+    const resp = await apiPost({ action:'aiText', prompt });
+    if (!resp.success) throw new Error(resp.error || 'AI วิเคราะห์ไม่สำเร็จ');
+    const text = resp.data?.text || '';
+    const m = text.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('AI response invalid — ลองใหม่อีกครั้ง');
+    const analysis = JSON.parse(m[0]);
+
+    // เก็บ cache
+    aiAnalysisCache[ticker] = { timestamp: Date.now(), data: analysis };
+    localStorage.setItem('ai_analysis_cache', JSON.stringify(aiAnalysisCache));
+
+    renderAIAnalysis(ticker, analysis, false);
+  } catch (e) {
+    container.innerHTML = `<div style="margin-top:.6rem;padding:.6rem .7rem;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);border-radius:8px;font-size:.7rem;color:#f87171">⚠ ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔄 วิเคราะห์ใหม่';
+  }
+}
+
+function renderAIAnalysis(ticker, a, fromCache) {
+  const sid = safeId(ticker);
+  const container = document.getElementById(`ai-result-${sid}`);
+  if (!container) return;
+  const recColor = { BUY:'#34d399', HOLD:'#fbbf24', SELL:'#f87171' };
+  const recBg    = { BUY:'rgba(52,211,153,.12)', HOLD:'rgba(251,191,36,.12)', SELL:'rgba(248,113,113,.12)' };
+  const recEmoji = { BUY:'🟢', HOLD:'🟡', SELL:'🔴' };
+  const rec = (a.recommendation || 'HOLD').toUpperCase();
+  const cachedAge = fromCache && aiAnalysisCache[ticker]
+    ? Math.round((Date.now() - aiAnalysisCache[ticker].timestamp) / 60000) + ' นาทีที่แล้ว'
+    : 'เมื่อกี้';
+
+  container.style.display = 'block';
+  container.innerHTML = `
+    <div style="margin-top:.6rem;padding-top:.6rem;border-top:1px dashed rgba(167,139,250,.35)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.45rem">
+        <span style="font-size:.68rem;font-weight:700;color:var(--accent)">🤖 AI Analysis</span>
+        <span style="font-size:.55rem;color:var(--muted)">${cachedAge}</span>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:.5rem .65rem;margin-bottom:.45rem">
+        <div style="font-size:.58rem;color:var(--muted);margin-bottom:.18rem">📍 สถานะตอนนี้</div>
+        <div style="font-size:.72rem;line-height:1.55;color:var(--text)">${a.status || '—'}</div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:.55rem;background:${recBg[rec]||recBg.HOLD};border-radius:8px;padding:.55rem .65rem;margin-bottom:.45rem">
+        <div style="font-size:1rem">${recEmoji[rec]||'🟡'}</div>
+        <div style="flex:1">
+          <div style="font-size:.78rem;font-weight:800;color:${recColor[rec]||recColor.HOLD};letter-spacing:.5px">${rec}</div>
+          <div style="font-size:.7rem;color:var(--text);line-height:1.5;margin-top:.15rem">${a.recommendationReason || '—'}</div>
+        </div>
+      </div>
+      ${Array.isArray(a.risks) && a.risks.length ? `
+      <div style="background:var(--bg);border-radius:8px;padding:.5rem .65rem;margin-bottom:.45rem">
+        <div style="font-size:.58rem;color:var(--muted);margin-bottom:.25rem">⚠ ความเสี่ยง & จุดควรระวัง</div>
+        <div style="font-size:.7rem;line-height:1.65;color:var(--text)">${a.risks.map(r=>'• '+r).join('<br>')}</div>
+      </div>` : ''}
+      ${a.portfolioFit ? `
+      <div style="background:var(--bg);border-radius:8px;padding:.5rem .65rem">
+        <div style="font-size:.58rem;color:var(--muted);margin-bottom:.18rem">📊 เทียบกับพอร์ต</div>
+        <div style="font-size:.7rem;line-height:1.55;color:var(--text)">${a.portfolioFit}</div>
+      </div>` : ''}
+      <div style="font-size:.55rem;color:var(--muted);text-align:right;margin-top:.4rem;font-style:italic">⚠ การวิเคราะห์เพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุนจริง</div>
+    </div>`;
+}
+
+// ============================================================
+// INVESTMENTS — เพิ่ม apiPost + แก้ asset value ใน select
+// ============================================================
+async function addInvestment() {
+  const asset  = document.getElementById('inv-asset').value;
+  const amount = parseFloat(document.getElementById('inv-amount').value);
+  const date   = document.getElementById('inv-date').value;
+  const note   = document.getElementById('inv-note').value.trim().replace(/[=+\-@]/g,'').toUpperCase();
+  if (!amount || amount <= 0) { toast('Please enter a valid amount', false); return; }
+  if (!date)                  { toast('Please select a date', false); return; }
+  if (!note)                  { toast('กรุณาใส่ ticker (ชื่อหุ้น)', false); return; }
+
+  const inv = { id:uid(), created_at:new Date().toISOString(), date, asset, amount, note };
+
+  if (CONFIG.apiUrl) {
+    setLoading('btn-add-inv', true);
+    try {
+      const r = await apiPost({ action:'addInvestment', ...inv });
+      if (!r.success) { toast('API error: ' + r.error, false); setLoading('btn-add-inv', false); return; }
+      toast('Investment saved to Sheet! ✓');
+    } catch(e) {
+      toast('API failed — saved locally only', false);
+    }
+    setLoading('btn-add-inv', false);
+  }
+
+  state.investments.unshift(inv);
+  save();
+  closeInvestModal();
+  document.getElementById('inv-amount').value = '';
+  document.getElementById('inv-note').value = '';
+  if (!CONFIG.apiUrl) toast('Investment added (local)');
+  renderInvestments();
+}
+
+function openEditInvestment(id) {
+  const inv = state.investments.find(i => i.id === id);
+  if (!inv) return;
+  document.getElementById('edit-inv-id').value    = inv.id;
+  document.getElementById('edit-inv-asset').value = inv.asset;
+  document.getElementById('edit-inv-amount').value= inv.amount;
+  document.getElementById('edit-inv-date').value  = inv.date;
+  document.getElementById('edit-inv-note').value  = inv.note || '';
+  document.getElementById('modal-edit-invest').classList.add('open');
+}
+
+function closeEditInvestModal() { document.getElementById('modal-edit-invest').classList.remove('open'); }
+
+async function saveEditInvestment() {
+  const id     = document.getElementById('edit-inv-id').value;
+  const asset  = document.getElementById('edit-inv-asset').value;
+  const amount = parseFloat(document.getElementById('edit-inv-amount').value);
+  const date   = document.getElementById('edit-inv-date').value;
+  const note   = document.getElementById('edit-inv-note').value.trim().replace(/[=+\-@]/g,'').toUpperCase();
+  if (!amount || amount <= 0) { toast('Please enter a valid amount', false); return; }
+  if (!date)                  { toast('Please select a date', false); return; }
+
+  const inv = state.investments.find(i => i.id === id);
+  if (!inv) return;
+  inv.asset = asset; inv.amount = amount; inv.date = date; inv.note = note;
+
+  if (CONFIG.apiUrl) {
+    setLoading('btn-save-inv', true);
+    try {
+      const r = await apiPost({ action:'updateInvestment', ...inv });
+      if (!r.success) toast('Sync error: ' + r.error, false); else toast('Investment updated & synced ✓');
+    } catch(e) { toast('Saved locally — sync failed', false); }
+    setLoading('btn-save-inv', false);
+  } else { toast('Investment updated'); }
+
+  save();
+  closeEditInvestModal();
+  renderInvestments();
+}
+
+async function deleteInvestment(id) {
+  if (!confirm('Delete this investment?')) return;
+  if (CONFIG.apiUrl) {
+    try { await apiPost({ action:'deleteInvestment', id }); } catch(e) {}
+  }
+  state.investments = state.investments.filter(i => i.id !== id);
+  save();
+  closeEditInvestModal();
+  renderInvestments();
+  toast('Deleted');
+}
+
+function renderInvestments() {
+  const assetTotals = {};
+  state.investments.forEach(i => { assetTotals[i.asset] = (assetTotals[i.asset]||0) + Number(i.amount); });
+
+  const cardsEl = document.getElementById('invest-cards');
+  const assets  = Object.keys(assetTotals);
+  if (!assets.length) {
+    cardsEl.innerHTML = '<div class="card-sm" style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted)">No investments yet. <button class="btn-primary" onclick="openInvestModal()" style="margin-left:.5rem">Add one</button></div>';
+  } else {
+    cardsEl.innerHTML = assets.map(a => `
+      <div class="card-sm">
+        <div style="font-size:1.5rem;margin-bottom:.5rem">${catEmoji[a]||'💰'}</div>
+        <div style="font-size:.72rem;color:var(--muted);font-weight:500">${a}</div>
+        <div style="font-size:1.2rem;font-weight:700;color:var(--accent);margin-top:.25rem">${fmt(assetTotals[a])}</div>
+      </div>
+    `).join('') + `<div class="card-sm" style="display:flex;flex-direction:column;justify-content:center;align-items:center;cursor:pointer;border-style:dashed" onclick="openInvestModal()"><div style="font-size:1.5rem">+</div><div style="font-size:.75rem;color:var(--muted)">Add</div></div>`;
+  }
+
+  document.getElementById('invest-list').innerHTML = state.investments.map(i => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:var(--surface2);border-radius:10px">
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <span>${catEmoji[i.asset]||'💰'}</span>
+        <div><div style="font-size:.82rem;font-weight:500">${i.asset}</div><div style="font-size:.7rem;color:var(--muted)">${i.date}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <div style="text-align:right">
+          <div style="font-size:.85rem;font-weight:600;color:var(--accent)">${fmt(i.amount)}</div>
+          ${i.note ? `<div style="font-size:.65rem;color:var(--muted)">${i.note}</div>` : ''}
+        </div>
+        <button onclick="openEditInvestment('${i.id}')" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);color:var(--accent);border-radius:8px;padding:.3rem .5rem;cursor:pointer;font-size:.75rem">✏️</button>
+      </div>
+    </div>
+  `).join('') || '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.8rem">No records</div>';
+
+  renderMarketCards();
+
+  if (charts.invest) charts.invest.destroy();
+  const ctx = document.getElementById('invest-chart')?.getContext('2d');
+  if (ctx) {
+    const sorted = [...state.investments].sort((a,b) => a.date.localeCompare(b.date));
+    let running = 0;
+    charts.invest = new Chart(ctx, {
+      type:'line',
+      data:{ labels:sorted.map(i=>i.date.slice(5)), datasets:[{ data:sorted.map(i=>{running+=Number(i.amount);return running;}), borderColor:'#a78bfa', backgroundColor:'rgba(167,139,250,.08)', fill:true, tension:.4, pointRadius:3, pointBackgroundColor:'#a78bfa' }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{color:'#8b8aa0',font:{size:9}}}, y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b8aa0',font:{size:9},callback:v=>CONFIG.currency+v.toLocaleString()}} } }
+    });
+  }
+}
+
+// ============================================================
+// GOALS — เพิ่ม apiPost ทั้ง add และ update
+// ============================================================
+async function addGoal() {
+  const name    = document.getElementById('goal-name').value.trim().replace(/[<>]/g,'');
+  const target  = parseFloat(document.getElementById('goal-target').value);
+  const current = parseFloat(document.getElementById('goal-current').value) || 0;
+  const deadline= document.getElementById('goal-deadline').value;
+  if (!name)             { toast('Please enter a goal name', false); return; }
+  if (!target || target <= 0) { toast('Please enter a target amount', false); return; }
+
+  const goal = { id:uid(), goal_name:name, target_amount:target, current_amount:current, deadline };
+
+  if (CONFIG.apiUrl) {
+    setLoading('btn-add-goal', true);
+    try {
+      const r = await apiPost({ action:'addGoal', ...goal });
+      if (!r.success) { toast('API error: ' + r.error, false); setLoading('btn-add-goal', false); return; }
+      toast('Goal saved to Sheet! ✓');
+    } catch(e) {
+      toast('API failed — saved locally only', false);
+    }
+    setLoading('btn-add-goal', false);
+  }
+
+  state.goals.push(goal);
+  save();
+  closeGoalModal();
+  document.getElementById('goal-name').value = '';
+  document.getElementById('goal-target').value = '';
+  document.getElementById('goal-current').value = '0';
+  document.getElementById('goal-deadline').value = '';
+  if (!CONFIG.apiUrl) toast('Goal created (local)');
+  renderGoals();
+}
+
+async function deleteGoal(id) {
+  if (CONFIG.apiUrl) {
+    try { await apiPost({ action:'deleteGoal', id }); } catch(e) {}
+  }
+  state.goals = state.goals.filter(g => g.id !== id);
+  save();
+  renderGoals();
+  toast('Goal removed');
+}
+
+async function updateGoalAmount(id) {
+  const g = state.goals.find(g => g.id === id);
+  if (!g) return;
+  const val = parseFloat(prompt(`Current amount for "${g.goal_name}":`)||'');
+  if (isNaN(val) || val < 0) { toast('Invalid amount', false); return; }
+  g.current_amount = val;
+
+  if (CONFIG.apiUrl) {
+    try {
+      const r = await apiPost({ action:'updateGoal', id, current_amount:val });
+      if (!r.success) toast('Sync error: ' + r.error, false);
+      else toast('Progress updated & synced! ✓');
+    } catch(e) {
+      toast('Saved locally — sync failed', false);
+    }
+  } else {
+    toast('Progress updated (local)');
+  }
+
+  save();
+  renderGoals();
+}
+
+function renderGoals() {
+  const el = document.getElementById('goals-grid');
+  if (!state.goals.length) {
+    el.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">No goals yet. Set one and start saving! 🎯</div>';
+    return;
+  }
+  el.innerHTML = state.goals.map(g => {
+    const pct      = Math.min(100, Math.round(g.current_amount / g.target_amount * 100));
+    const daysLeft = g.deadline ? Math.ceil((new Date(g.deadline) - Date.now()) / (1000*60*60*24)) : null;
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">
+        <div>
+          <div style="font-size:.95rem;font-weight:600">🎯 ${g.goal_name}</div>
+          ${g.deadline ? `<div style="font-size:.72rem;color:${daysLeft<30?'#fbbf24':'var(--muted)'};margin-top:.2rem">${daysLeft>0?daysLeft+' days left':'Deadline passed'}</div>` : ''}
+        </div>
+        <button onclick="deleteGoal('${g.id}')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:.9rem">✕</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted);margin-bottom:.4rem">
+        <span>${fmt(g.current_amount)}</span>
+        <span>${pct}% · ${fmt(g.target_amount)}</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <button onclick="updateGoalAmount('${g.id}')" class="btn-ghost" style="width:100%;margin-top:.75rem;font-size:.78rem">Update Progress</button>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// ANALYTICS
+// ============================================================
+function renderAnalytics() {
+  if (charts.trend) charts.trend.destroy();
+  const ctx = document.getElementById('trend-chart')?.getContext('2d');
+  if (ctx) {
+    const months=[],data=[];
+    for (let i=5;i>=0;i--) {
+      const d=new Date(); d.setMonth(d.getMonth()-i);
+      const m=d.toISOString().slice(0,7);
+      months.push(d.toLocaleString('default',{month:'short'}));
+      data.push(state.transactions.filter(t=>t.date.startsWith(m)&&t.type==='Expense').reduce((s,t)=>s+t.amount,0));
+    }
+    charts.trend = new Chart(ctx, {
+      type:'line',
+      data:{ labels:months, datasets:[{ label:'Expenses', data, borderColor:'#f87171', backgroundColor:'rgba(248,113,113,.1)', fill:true, tension:.4, pointRadius:4, pointBackgroundColor:'#f87171' }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{color:'#8b8aa0'}}, y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b8aa0',callback:v=>CONFIG.currency+v.toLocaleString()}} } }
+    });
+  }
+
+  const cats={};
+  state.transactions.filter(t=>t.type==='Expense').forEach(t=>{ cats[t.category]=(cats[t.category]||0)+t.amount; });
+  const sorted = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const max = sorted[0]?.[1] || 1;
+  document.getElementById('analytics-cats').innerHTML = sorted.slice(0,6).map(([cat,amt]) => `
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.3rem"><span>${catEmoji[cat]||'📦'} ${cat}</span><span style="color:var(--muted)">${fmt(amt)}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(amt/max*100)}%;background:linear-gradient(90deg,#f87171,#fb923c)"></div></div>
+    </div>
+  `).join('') || '<div style="color:var(--muted);font-size:.8rem">No data yet</div>';
+
+  const now=thisMonth();
+  const mTx=state.transactions.filter(t=>t.date.startsWith(now));
+  const income =mTx.filter(t=>t.type==='Income').reduce((s,t)=>s+t.amount,0);
+  const expense=mTx.filter(t=>t.type==='Expense').reduce((s,t)=>s+t.amount,0);
+  const net=income-expense;
+  document.getElementById('analytics-summary').innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:.5rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Total Income</span><span style="color:#34d399;font-weight:600">${fmt(income)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:.5rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Total Expenses</span><span style="color:#f87171;font-weight:600">${fmt(expense)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:.5rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Net Balance</span><span style="color:${net>=0?'#34d399':'#f87171'};font-weight:700">${fmt(net)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:.5rem 0"><span style="color:var(--muted)">Savings Rate</span><span style="color:#fbbf24;font-weight:600">${income>0?Math.round(net/income*100):0}%</span></div>
+  `;
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function loadSettingsForm() {
+  document.getElementById('cfg-url').value      = localStorage.getItem('cfg_url') || '';
+  document.getElementById('cfg-currency').value = localStorage.getItem('cfg_currency') || '฿';
+  document.getElementById('api-status').style.display = 'none';
+}
+function saveSettings() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const cur = document.getElementById('cfg-currency').value.trim() || '฿';
+  localStorage.setItem('cfg_url', url);
+  localStorage.setItem('cfg_currency', cur);
+  toast('บันทึกแล้ว!');
+  if (url) { startAutoRefresh && startAutoRefresh(); }
+}
+function clearAllData() {
+  if (!confirm('Clear ALL local data? This cannot be undone.')) return;
+  state = { transactions:[], investments:[], goals:[] };
+  save();
+  toast('All data cleared');
+  renderDashboard();
+}
+
+// ============================================================
+// DEMO DATA
+// ============================================================
+function loadDemoData() {
+  const now = new Date();
+  const d = n => { const x=new Date(now); x.setDate(x.getDate()-n); return x.toISOString().slice(0,10); };
+  const lm = day => { const x=new Date(now.getFullYear(), now.getMonth()-1, day); return x.toISOString().slice(0,10); };
+  state.transactions = [
+    // ── เดือนก่อน (ไว้เทียบ delta) ──
+    {id:uid(),created_at:now.toISOString(),date:lm(1), type:'Income', category:'Salary',    amount:45000,note:'เงินเดือน'},
+    {id:uid(),created_at:now.toISOString(),date:lm(3), type:'Expense',category:'Food',  amount:1500, note:'ของกินเดือนก่อน'},
+    {id:uid(),created_at:now.toISOString(),date:lm(8), type:'Expense',category:'Shopping',  amount:4200, note:'เสื้อผ้า'},
+    {id:uid(),created_at:now.toISOString(),date:lm(14),type:'Expense',category:'Bills',     amount:2100, note:'ค่าน้ำค่าไฟ'},
+    {id:uid(),created_at:now.toISOString(),date:lm(20),type:'Expense',category:'Transport', amount:1800, note:'ค่าเดินทาง'},
+    // ── เดือนปัจจุบัน ──
+    {id:uid(),created_at:now.toISOString(),date:d(1), type:'Income', category:'Salary',        amount:45000,note:'Monthly salary'},
+    {id:uid(),created_at:now.toISOString(),date:d(2), type:'Income', category:'Freelance',     amount:8500, note:'Web design project'},
+    {id:uid(),created_at:now.toISOString(),date:d(3), type:'Expense',category:'Food',          amount:1200, note:'Groceries'},
+    {id:uid(),created_at:now.toISOString(),date:d(4), type:'Expense',category:'Transport',     amount:800,  note:'Grab & fuel'},
+    {id:uid(),created_at:now.toISOString(),date:d(5), type:'Expense',category:'Shopping',      amount:3200, note:'New shoes'},
+    {id:uid(),created_at:now.toISOString(),date:d(6), type:'Expense',category:'Bills',         amount:2100, note:'Internet + electric'},
+    {id:uid(),created_at:now.toISOString(),date:d(8), type:'Expense',category:'Entertainment', amount:600,  note:'Netflix + games'},
+    {id:uid(),created_at:now.toISOString(),date:d(10),type:'Expense',category:'Food',          amount:950,  note:'Restaurant week'},
+    {id:uid(),created_at:now.toISOString(),date:d(12),type:'Expense',category:'Education',     amount:2500, note:'Online course'},
+    {id:uid(),created_at:now.toISOString(),date:d(15),type:'Income', category:'Freelance',     amount:5000, note:'Logo design'},
+  ];
+  state.investments = [
+    {id:uid(),created_at:now.toISOString(),date:d(5), asset:'Bitcoin',amount:5000, note:'Monthly DCA'},
+    {id:uid(),created_at:now.toISOString(),date:d(10),asset:'ETF',    amount:8000, note:'SET50 ETF'},
+    {id:uid(),created_at:now.toISOString(),date:d(20),asset:'Gold',   amount:3000, note:'Physical gold'},
+    {id:uid(),created_at:now.toISOString(),date:d(30),asset:'Stock',  amount:6000, note:'PTT shares'},
+    {id:uid(),created_at:now.toISOString(),date:d(35),asset:'Savings',amount:10000,note:'Fixed deposit'},
+  ];
+  state.goals = [
+    {id:uid(),goal_name:'Emergency Fund',target_amount:150000,current_amount:62000, deadline:'2026-12-31'},
+    {id:uid(),goal_name:'MacBook Pro',   target_amount:55000, current_amount:23000, deadline:'2026-08-01'},
+    {id:uid(),goal_name:'Vacation Fund', target_amount:30000, current_amount:8500,  deadline:'2026-10-01'},
+  ];
+  save();
+  toast('Demo data loaded! 🎉');
+  renderDashboard();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('tx-date').value = new Date().toISOString().slice(0,10);
+  ['btn-add-tx','btn-add-inv','btn-add-goal'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.dataset.label = b.textContent;
+  });
+  renderDashboard();
+  autoSyncOnLoad();
+  if (!state.transactions.length && !state.investments.length) {
+    setTimeout(() => toast('👋 ใส่ Backend URL ในหน้าตั้งค่า เพื่อ sync ข้อมูล หรือกดโหลดข้อมูลตัวอย่าง'), 1000);
+  }
+});
+
+// ============================================================
+// SPACE ADD FX — particle burst when transaction is added
+// ============================================================
+function spaceAddFX() {
+  const btn  = document.getElementById('btn-add-tx');
+  const rect = btn ? btn.getBoundingClientRect() : null;
+  const ox   = rect ? rect.left + rect.width  / 2 : window.innerWidth  / 2;
+  const oy   = rect ? rect.top  + rect.height / 2 : window.innerHeight / 2;
+
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9998';
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  const t0 = performance.now();
+  const DUR = 1100;
+
+  // star particles bursting out
+  const particles = Array.from({ length: 90 }, (_, i) => {
+    const angle  = (i / 90) * Math.PI * 2 + Math.random() * 0.25;
+    const speed  = 2 + Math.random() * 7;
+    const bright = Math.random() > 0.55;
+    return {
+      x: ox, y: oy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size:   bright ? 2 + Math.random() * 2.5 : 0.7 + Math.random() * 1.5,
+      hue:    252 + Math.random() * 65,   // purple → violet → pink
+      light:  bright ? 92 : 72,
+      alpha:  1,
+      decay:  0.011 + Math.random() * 0.017,
+      sparkle: bright,
+      tail:   [],                          // comet tail positions
+    };
+  });
+
+  // a few bright "comets" with longer tails
+  for (let i = 0; i < 12; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 5 + Math.random() * 9;
+    particles.push({
+      x: ox, y: oy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: 1.4, hue: 0, light: 100,
+      alpha: 1, decay: 0.016,
+      sparkle: false, tail: [],
+    });
+  }
+
+  // shockwave rings
+  const rings = [
+    { r: 0, maxR: 110, alpha: 0.85, lw: 2.5 },
+    { r: 0, maxR: 185, alpha: 0.50, lw: 1.5 },
+    { r: 0, maxR: 270, alpha: 0.28, lw: 1.0 },
+  ];
+  const RING_SPEED = [5, 3.5, 2.5];
+
+  function frame(ts) {
+    const elapsed  = ts - t0;
+    const progress = Math.min(elapsed / DUR, 1);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // central supernova flash
+    if (progress < 0.14) {
+      const f = 1 - progress / 0.14;
+      const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, 90);
+      g.addColorStop(0,   `rgba(235,215,255,${(f * 0.75).toFixed(2)})`);
+      g.addColorStop(0.45,`rgba(167,139,250,${(f * 0.40).toFixed(2)})`);
+      g.addColorStop(1,   'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // expanding rings
+    rings.forEach((rg, i) => {
+      rg.r = Math.min(rg.r + RING_SPEED[i], rg.maxR);
+      const a = rg.alpha * (1 - rg.r / rg.maxR) * (1 - progress * 0.6);
+      if (a < 0.01) return;
+      ctx.beginPath();
+      ctx.arc(ox, oy, rg.r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(167,139,250,${a.toFixed(3)})`;
+      ctx.lineWidth   = rg.lw;
+      ctx.shadowBlur  = 16;
+      ctx.shadowColor = '#a78bfa';
+      ctx.stroke();
+      ctx.shadowBlur  = 0;
+    });
+
+    // particles
+    for (const p of particles) {
+      if (p.alpha <= 0) continue;
+      // record tail
+      p.tail.push({ x: p.x, y: p.y, a: p.alpha });
+      if (p.tail.length > 7) p.tail.shift();
+
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.vx *= 0.962;
+      p.vy *= 0.962;
+      p.alpha -= p.decay;
+
+      const a = Math.max(0, p.alpha);
+
+      // comet tail
+      p.tail.forEach((tp, ti) => {
+        const ta = (tp.a * (ti / p.tail.length) * 0.45).toFixed(3);
+        ctx.beginPath();
+        ctx.arc(tp.x, tp.y, p.size * 0.6 * (ti / p.tail.length), 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${p.hue},78%,${p.light}%,${ta})`;
+        ctx.fill();
+      });
+
+      // sparkle cross for bright stars
+      if (p.sparkle && a > 0.2) {
+        const arm = p.size * a * 1.8;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(ts * 0.004 + p.hue);
+        ctx.beginPath();
+        ctx.moveTo(-arm, 0); ctx.lineTo(arm, 0);
+        ctx.moveTo(0, -arm); ctx.lineTo(0, arm);
+        ctx.strokeStyle = `hsla(${p.hue},85%,90%,${(a * 0.7).toFixed(3)})`;
+        ctx.lineWidth   = 0.9;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // main dot
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * Math.max(0.01, a), 0, Math.PI * 2);
+      ctx.fillStyle   = `hsla(${p.hue},80%,${p.light}%,${a.toFixed(3)})`;
+      ctx.shadowBlur  = p.sparkle ? 12 : 5;
+      ctx.shadowColor = `hsla(${p.hue},80%,75%,0.6)`;
+      ctx.fill();
+      ctx.shadowBlur  = 0;
+    }
+
+    if (progress < 1) requestAnimationFrame(frame);
+    else canvas.remove();
+  }
+
+  requestAnimationFrame(frame);
+}
+
