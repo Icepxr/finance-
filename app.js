@@ -65,6 +65,26 @@ const setLoading = (btnId, loading) => {
   b.textContent = loading ? 'Saving...' : b.dataset.label || b.textContent;
 };
 
+// ── Coffee-cup loader (AI กำลังคิด) ──
+const cupLoaderHTML = (txt='') => `<div style="text-align:center;padding:1rem 0"><div class="cup-loader"><div class="cup"><div class="cup-handle"></div><div class="smoke one"></div><div class="smoke two"></div><div class="smoke three"></div></div></div>${txt?`<div style="font-size:.78rem;color:var(--muted);margin-top:.5rem">${txt}</div>`:''}</div>`;
+
+// ── สร้าง span ต่อตัวอักษรให้ floating "wave" label ──
+function initWaveLabels(){
+  document.querySelectorAll('.wave-group .label[data-text]').forEach(label => {
+    if (label.dataset.done) return;
+    const txt = label.getAttribute('data-text') || '';
+    label.textContent = '';
+    Array.from(txt).forEach((ch,i) => {
+      const s = document.createElement('span');
+      s.className = 'label-char';
+      s.style.setProperty('--index', i);
+      s.textContent = ch === ' ' ? ' ' : ch;
+      label.appendChild(s);
+    });
+    label.dataset.done = '1';
+  });
+}
+
 const catEmoji = {
   Food:'🍜', Transport:'🚗', Shopping:'🛍️', Bills:'⚡', Education:'📚',
   Entertainment:'🎮', Investment:'📈', Salary:'💼', Freelance:'💻', Other:'📦',
@@ -938,7 +958,7 @@ async function analyzePortfolioWithAI() {
 
   if (btn) { btn.disabled = true; btn.innerHTML = '⏳ AI กำลังวิเคราะห์ทั้งพอร์ต...'; }
   container.style.display = 'block';
-  container.innerHTML = `<div style="padding:.9rem;background:var(--bg);border-radius:10px;font-size:.75rem;color:var(--muted);text-align:center;margin-top:.6rem">🤖 กำลังวิเคราะห์ ${heldTickers.length} หุ้น พร้อมภาพรวมพอร์ต...</div>`;
+  container.innerHTML = `<div style="background:var(--bg);border-radius:10px;margin-top:.6rem;padding:.4rem">${cupLoaderHTML('กำลังวิเคราะห์ ' + heldTickers.length + ' หุ้น พร้อมภาพรวมพอร์ต...')}</div>`;
 
   try {
     const totalInvested = Object.values(holdings).reduce((s,x)=>s+(x.invested||0),0);
@@ -1380,6 +1400,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const b = document.getElementById(id);
     if (b) b.dataset.label = b.textContent;
   });
+  initWaveLabels();
   renderDashboard();
   autoSyncOnLoad();
   if (!state.transactions.length && !state.investments.length) {

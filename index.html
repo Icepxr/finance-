@@ -122,9 +122,8 @@
       <div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:1rem">การเชื่อมต่อ</div>
       <div style="display:flex;flex-direction:column;gap:.9rem">
         <div>
-          <label style="font-size:.8rem;color:var(--text);display:block;margin-bottom:.4rem">🔗 Backend URL</label>
-          <input type="text" id="cfg-url" placeholder="https://script.google.com/macros/s/.../exec">
-          <div style="font-size:.7rem;color:var(--muted);margin-top:.4rem;line-height:1.6">ลิงก์ Web App จาก Apps Script — ใส่ครั้งเดียว ทุกฟีเจอร์ (sync · ราคาหุ้น · อ่านสลิป · AI) ทำงานผ่านลิงก์นี้ <span style="color:var(--accent)">API key ทั้งหมดอยู่ใน code.gs แล้ว ไม่ต้องกรอกที่นี่</span></div>
+          <div class="wave-group"><input type="text" id="cfg-url" class="input" placeholder=" "><span class="bar"></span><label class="label" data-text="🔗 Backend URL"></label></div>
+          <div style="font-size:.7rem;color:var(--muted);margin-top:.5rem;line-height:1.6">ลิงก์ Web App จาก Apps Script (ลงท้าย /exec) — ใส่ครั้งเดียว ทุกฟีเจอร์ (sync · ราคาหุ้น · อ่านสลิป · AI) ทำงานผ่านลิงก์นี้ <span style="color:var(--accent)">API key ทั้งหมดอยู่ใน code.gs แล้ว ไม่ต้องกรอกที่นี่</span></div>
         </div>
         <div style="display:flex;align-items:center;gap:.75rem">
           <label style="font-size:.8rem;color:var(--muted)">สกุลเงิน</label>
@@ -211,9 +210,9 @@
     <div id="slip-preview" style="display:none;margin-bottom:1rem">
       <img id="slip-img" style="width:100%;border-radius:12px;max-height:260px;object-fit:contain;background:var(--surface2)">
     </div>
-    <div id="slip-scanning" style="display:none;text-align:center;padding:1.25rem;color:var(--muted);font-size:.85rem">
-      <div style="font-size:1.75rem;margin-bottom:.5rem">🤖</div>
-      AI กำลังวิเคราะห์สลิป...
+    <div id="slip-scanning" style="display:none;text-align:center;padding:1.25rem 1.25rem 1.75rem;color:var(--muted);font-size:.85rem">
+      <div class="cup-loader"><div class="cup"><div class="cup-handle"></div><div class="smoke one"></div><div class="smoke two"></div><div class="smoke three"></div></div></div>
+      <div style="margin-top:.5rem">AI กำลังอ่านสลิป...</div>
     </div>
     <div id="slip-result" style="display:none;margin-bottom:1rem;background:var(--surface2);border-radius:12px;padding:.9rem"></div>
     <div style="display:flex;gap:.75rem">
@@ -236,7 +235,7 @@
       <button class="chip" id="type-expense" onclick="setType('Expense')">💸 Expense</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:.75rem">
-      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Amount</label><input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="wave-group"><input type="number" id="tx-amount" min="0" step="0.01" class="input" placeholder=" "><span class="bar"></span><label class="label" data-text="Amount"></label></div>
       <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Category</label>
         <select id="tx-cat">
           <option value="Salary">💼 Salary</option><option value="Freelance">💻 Freelance</option>
@@ -247,7 +246,7 @@
         </select>
       </div>
       <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Date</label><input type="date" id="tx-date"></div>
-      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Note (optional)</label><input type="text" id="tx-note" placeholder="What was this for?"></div>
+      <div class="wave-group"><input type="text" id="tx-note" class="input" placeholder=" "><span class="bar"></span><label class="label" data-text="Note (optional)"></label></div>
       <div style="display:flex;gap:.75rem;margin-top:.5rem">
         <button class="btn-ghost" onclick="closeModal()" style="flex:1">Cancel</button>
         <button class="btn-primary" id="btn-add-tx" onclick="addTransaction()" style="flex:1">Add Transaction</button>
@@ -272,9 +271,9 @@
           <option value="Savings">🏦 Savings</option>
         </select>
       </div>
-      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Amount</label><input type="number" id="edit-inv-amount" min="0"></div>
+      <div class="wave-group"><input type="number" id="edit-inv-amount" min="0" class="input" placeholder=" "><span class="bar"></span><label class="label" data-text="Amount"></label></div>
       <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Date</label><input type="date" id="edit-inv-date"></div>
-      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Ticker (ชื่อหุ้นเท่านั้น)</label><input type="text" id="edit-inv-note" placeholder="e.g. NVDA, TSM, SPUS" style="text-transform:uppercase"></div>
+      <div class="wave-group"><input type="text" id="edit-inv-note" class="input" placeholder=" " style="text-transform:uppercase"><span class="bar"></span><label class="label" data-text="Ticker"></label></div>
       <div style="display:flex;gap:.75rem;margin-top:.5rem">
         <button class="btn-ghost" onclick="deleteInvestment(document.getElementById('edit-inv-id').value)" style="flex:1;color:#f87171;border-color:rgba(248,113,113,.3)">Delete</button>
         <button class="btn-primary" id="btn-save-inv" onclick="saveEditInvestment()" style="flex:1">Save Changes</button>
@@ -298,9 +297,9 @@
           <option value="Savings">🏦 Savings</option>
         </select>
       </div>
-      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Amount</label><input type="number" id="inv-amount" placeholder="0.00" min="0"></div>
+      <div class="wave-group"><input type="number" id="inv-amount" min="0" class="input" placeholder=" "><span class="bar"></span><label class="label" data-text="Amount"></label></div>
       <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Date</label><input type="date" id="inv-date"></div>
-      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Ticker (ชื่อหุ้นเท่านั้น)</label><input type="text" id="inv-note" placeholder="e.g. NVDA, TSM, SPUS" style="text-transform:uppercase"><div style="font-size:.65rem;color:var(--muted);margin-top:.25rem">ใส่ ticker symbol อย่างเดียว ระบบจะใช้ดึงราคา real-time</div></div>
+      <div><div class="wave-group"><input type="text" id="inv-note" class="input" placeholder=" " style="text-transform:uppercase"><span class="bar"></span><label class="label" data-text="Ticker"></label></div><div style="font-size:.65rem;color:var(--muted);margin-top:.35rem">ใส่ ticker symbol อย่างเดียว ระบบจะใช้ดึงราคา real-time</div></div>
       <div style="display:flex;gap:.75rem;margin-top:.5rem">
         <button class="btn-ghost" onclick="closeInvestModal()" style="flex:1">Cancel</button>
         <button class="btn-primary" id="btn-add-inv" onclick="addInvestment()" style="flex:1">Add Investment</button>
@@ -317,9 +316,9 @@
       <button onclick="closeGoalModal()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:.25rem .6rem;cursor:pointer">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:.75rem">
-      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Goal Name</label><input type="text" id="goal-name" placeholder="e.g. Emergency Fund"></div>
-      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Target Amount</label><input type="number" id="goal-target" placeholder="50000" min="1"></div>
-      <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Current Saved</label><input type="number" id="goal-current" placeholder="0" min="0" value="0"></div>
+      <div class="wave-group"><input type="text" id="goal-name" class="input" placeholder=" "><span class="bar"></span><label class="label" data-text="Goal name"></label></div>
+      <div class="wave-group"><input type="number" id="goal-target" min="1" class="input" placeholder=" "><span class="bar"></span><label class="label" data-text="Target amount"></label></div>
+      <div class="wave-group"><input type="number" id="goal-current" min="0" value="0" class="input" placeholder=" "><span class="bar"></span><label class="label" data-text="Current saved"></label></div>
       <div><label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.35rem">Deadline</label><input type="date" id="goal-deadline"></div>
       <div style="display:flex;gap:.75rem;margin-top:.5rem">
         <button class="btn-ghost" onclick="closeGoalModal()" style="flex:1">Cancel</button>
