@@ -9,10 +9,10 @@
 <link rel="apple-touch-icon" href="assets/icon-180.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#7c3aed">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FinanceOS">
-<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -92,7 +92,9 @@
         <button id="btn-refresh-quotes" onclick="refreshAllQuotes()" class="btn-primary" style="font-size:.75rem;padding:.4rem .9rem">🔄 Refresh Price</button>
       </div>
       <div id="portfolio-summary" style="margin-bottom:1rem"></div>
-      <div style="font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:.75rem;padding-top:.75rem;border-top:1px solid var(--border)">📡 MARKET ANALYSIS</div>
+      <button id="btn-ai-portfolio" onclick="analyzePortfolioWithAI()" style="width:100%;background:linear-gradient(135deg,rgba(167,139,250,.2),rgba(124,58,237,.12));border:1px solid rgba(167,139,250,.4);color:var(--accent);border-radius:10px;padding:.6rem;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .15s">🤖 วิเคราะห์พอร์ตทั้งหมดด้วย AI</button>
+      <div id="ai-portfolio-result" style="display:none"></div>
+      <div style="font-size:.8rem;font-weight:600;color:var(--muted);margin:1rem 0 .75rem;padding-top:.75rem;border-top:1px solid var(--border)">📡 MARKET ANALYSIS</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.75rem" id="market-cards"></div>
     </div>
   </div>
@@ -144,7 +146,7 @@
       <div style="margin-top:1rem;padding:.75rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
         <div style="font-size:.72rem;color:var(--muted);line-height:1.7">
           💡 <strong style="color:var(--text)">ตั้งค่า key ครั้งเดียวใน code.gs</strong><br>
-          เปิด Apps Script → วาง <code style="color:var(--accent)">FINNHUB_API_KEY</code> และ <code style="color:var(--accent)">GEMINI_API_KEY</code> ที่ด้านบนไฟล์ → Deploy → คัดลอกลิงก์มาวางช่อง Backend URL ด้านบน
+          เปิด Apps Script → วาง <code style="color:var(--accent)">FINNHUB_API_KEY</code> และ <code style="color:var(--accent)">GROQ_API_KEY</code> ที่ด้านบนไฟล์ → Deploy → คัดลอกลิงก์มาวางช่อง Backend URL ด้านบน
         </div>
       </div>
     </div>

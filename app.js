@@ -244,7 +244,7 @@ function openEditTransaction(id) {
 }
 
 // ============================================================
-// SLIP SCANNER — Gemini Vision
+// SLIP SCANNER — Groq Vision (Llama 4 Scout)
 // ============================================================
 let currentSlipFile = null;
 
@@ -910,139 +910,120 @@ function renderMarketCards() {
       <div style="margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--border);font-size:.72rem;color:var(--accent);font-style:italic">
         💡 ${s.summary}
       </div>
-      <button id="btn-ai-${safeId(s.ticker)}" onclick="analyzeStockWithAI('${s.ticker}')" style="margin-top:.6rem;width:100%;background:linear-gradient(135deg,rgba(167,139,250,.18),rgba(167,139,250,.08));border:1px solid rgba(167,139,250,.35);color:var(--accent);border-radius:8px;padding:.45rem .6rem;cursor:pointer;font-size:.72rem;font-weight:600;transition:all .15s">🤖 วิเคราะห์ด้วย AI</button>
-      <div id="ai-result-${safeId(s.ticker)}" style="display:none"></div>
     </div>`
   }).join('');
 }
 
 // ============================================================
-// AI ANALYSIS (Gemini)
+// AI ANALYSIS (Groq) — วิเคราะห์ทั้งพอร์ตทีเดียว
 // ============================================================
-async function analyzeStockWithAI(ticker) {
-  if (!CONFIG.hasBackend) {
-    toast('เชื่อมต่อ Backend URL ในหน้า Settings ก่อน', false);
-    return;
-  }
-  const sid = safeId(ticker);
-  const btn = document.getElementById(`btn-ai-${sid}`);
-  const container = document.getElementById(`ai-result-${sid}`);
-  if (!btn || !container) return;
+const PORTFOLIO_CACHE_KEY = '__portfolio__';
 
-  // ใช้ cache ภายใน 1 ชั่วโมง
-  const cached = aiAnalysisCache[ticker];
+async function analyzePortfolioWithAI() {
+  if (!CONFIG.hasBackend) { toast('เชื่อมต่อ Backend URL ในหน้า Settings ก่อน', false); return; }
+  const btn = document.getElementById('btn-ai-portfolio');
+  const container = document.getElementById('ai-portfolio-result');
+  if (!container) return;
+
+  const holdings = getHoldings();
+  const heldTickers = Object.keys(holdings);
+  if (!heldTickers.length) { toast('ยังไม่มีหุ้นในพอร์ต — เพิ่ม investment พร้อม ticker ก่อน', false); return; }
+
+  // cache 1 ชั่วโมง
+  const cached = aiAnalysisCache[PORTFOLIO_CACHE_KEY];
   if (cached && (Date.now() - cached.timestamp) < AI_CACHE_TTL) {
-    renderAIAnalysis(ticker, cached.data, true);
+    renderPortfolioAI(cached.data, true);
     return;
   }
 
-  btn.disabled = true;
-  btn.innerHTML = '⏳ Gemini กำลังคิด...';
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ AI กำลังวิเคราะห์ทั้งพอร์ต...'; }
   container.style.display = 'block';
-  container.innerHTML = `<div style="margin-top:.6rem;padding:.75rem;background:var(--bg);border-radius:8px;font-size:.72rem;color:var(--muted);text-align:center">🤖 กำลังวิเคราะห์...</div>`;
+  container.innerHTML = `<div style="padding:.9rem;background:var(--bg);border-radius:10px;font-size:.75rem;color:var(--muted);text-align:center;margin-top:.6rem">🤖 กำลังวิเคราะห์ ${heldTickers.length} หุ้น พร้อมภาพรวมพอร์ต...</div>`;
 
   try {
-    // รวบรวมข้อมูล context
-    const q = liveQuotes[ticker] || {};
-    const holdings = getHoldings();
-    const h = holdings[ticker] || { invested:0, entries:0 };
-    const totalInvested = Object.values(holdings).reduce((s,x) => s + (x.invested||0), 0);
-    const portfolioPct = totalInvested ? (h.invested / totalInvested * 100).toFixed(1) : '0';
-    const heldTickers = Object.keys(holdings);
-    const known = MARKET_DATA.find(m => m.ticker === ticker);
+    const totalInvested = Object.values(holdings).reduce((s,x)=>s+(x.invested||0),0);
+    const lines = heldTickers.map(t => {
+      const h = holdings[t]; const q = liveQuotes[t] || {}; const k = MARKET_DATA.find(m=>m.ticker===t);
+      const pct = totalInvested ? (h.invested/totalInvested*100).toFixed(1) : '0';
+      const price = q.c ? `ราคา $${q.c.toFixed(2)} (${q.dp>=0?'+':''}${(q.dp||0).toFixed(2)}%)` : 'ไม่มีราคา real-time';
+      return `- ${t}${k?` (${k.name})`:''}: ลงทุน ฿${(h.invested||0).toLocaleString()} = ${pct}% ของพอร์ต · ${price}${k?` · P/E ${k.pe_static||'N/A'} · rating ${k.rating}`:''}`;
+    }).join('\n');
 
-    const ctxQuote = q.c
-      ? `- ราคาปัจจุบัน: $${q.c?.toFixed(2)} (เปลี่ยน ${q.dp?.toFixed(2)}% / $${q.d?.toFixed(2)})
-- ราคาเปิด: $${q.o?.toFixed(2)} | ปิดเมื่อวาน: $${q.pc?.toFixed(2)}
-- สูง/ต่ำวันนี้: $${q.h?.toFixed(2)} / $${q.l?.toFixed(2)}`
-      : '- ไม่มีข้อมูลราคา real-time';
+    const prompt = `คุณเป็นนักวิเคราะห์การลงทุนภาษาไทย วิเคราะห์ "ทั้งพอร์ต" ของผู้ใช้แบบกระชับ ตรงประเด็น
 
-    const ctxKnown = known ? `\n- P/E: ${known.pe_static || 'N/A'} | Analyst rating: ${known.rating}
-- ประเภท: ${known.type}${known.highlights?.length ? '\n\nข่าว/highlights ล่าสุด:\n' + known.highlights.map(x=>'- '+x).join('\n') : ''}` : '';
+พอร์ตรวม ฿${totalInvested.toLocaleString()} · USD/THB ${usdThbRate.toFixed(2)} · ถือ ${heldTickers.length} ตัว:
+${lines}
 
-    const prompt = `คุณเป็นนักวิเคราะห์การลงทุนภาษาไทย วิเคราะห์หุ้น ${ticker} (${known?.name || ticker}) ให้ผู้ใช้แบบกระชับและตรงประเด็น
-
-ข้อมูลตลาดปัจจุบัน:
-${ctxQuote}${ctxKnown}
-
-พอร์ตของผู้ใช้:
-- ลงทุนใน ${ticker} แล้ว ${h.entries} ครั้ง มูลค่ารวม ฿${(h.invested||0).toLocaleString()}
-- คิดเป็น ${portfolioPct}% ของพอร์ตรวม ฿${totalInvested.toLocaleString()}
-- หุ้นทั้งหมดที่ถืออยู่: ${heldTickers.join(', ')} (${heldTickers.length} ตัว)
-- USD/THB: ${usdThbRate.toFixed(2)}
-
-ตอบเป็น JSON ภาษาไทยเท่านั้น ห้ามมีข้อความอื่นนอกเหนือจาก JSON:
+ตอบเป็น JSON ภาษาไทยเท่านั้น ห้ามมีข้อความอื่นนอกเหนือจาก JSON ใช้โครงสร้างนี้:
 {
-  "status": "<สรุปสถานะหุ้นตอนนี้ 1-2 ประโยค>",
-  "recommendation": "<BUY หรือ HOLD หรือ SELL>",
-  "recommendationReason": "<เหตุผลของคำแนะนำ 1-2 ประโยค กระชับ>",
-  "risks": ["<ความเสี่ยงข้อ 1>", "<ข้อ 2>", "<ข้อ 3 ถ้ามี>"],
-  "portfolioFit": "<วิเคราะห์สัดส่วน ${portfolioPct}% ในพอร์ตเหมาะสมไหม diversification ดีพอไหม 1-2 ประโยค>"
+  "overall": {
+    "summary": "<ภาพรวมพอร์ต 1-2 ประโยค>",
+    "diversification": "<ประเมินการกระจายความเสี่ยง 1 ประโยค>",
+    "topPick": "<ticker ที่น่าสนใจสุดตอนนี้>",
+    "biggestRisk": "<ความเสี่ยงใหญ่สุดของพอร์ต 1 ประโยค>"
+  },
+  "holdings": [
+    { "ticker": "<ticker>", "recommendation": "<BUY หรือ HOLD หรือ SELL>", "reason": "<เหตุผลกระชับ 1 ประโยค>", "risk": "<จุดเสี่ยงหลัก 1 ประโยค>" }
+  ]
 }
-
-หมายเหตุ: นี่เป็นการวิเคราะห์เพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุนจริง`;
+ใส่ครบทุก ticker ที่ถืออยู่ หมายเหตุ: เพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุนจริง`;
 
     const resp = await apiPost({ action:'aiText', prompt });
     if (!resp.success) throw new Error(resp.error || 'AI วิเคราะห์ไม่สำเร็จ');
     const text = resp.data?.text || '';
     const m = text.match(/\{[\s\S]*\}/);
     if (!m) throw new Error('AI response invalid — ลองใหม่อีกครั้ง');
-    const analysis = JSON.parse(m[0]);
+    const data = JSON.parse(m[0]);
 
-    // เก็บ cache
-    aiAnalysisCache[ticker] = { timestamp: Date.now(), data: analysis };
+    aiAnalysisCache[PORTFOLIO_CACHE_KEY] = { timestamp: Date.now(), data };
     localStorage.setItem('ai_analysis_cache', JSON.stringify(aiAnalysisCache));
-
-    renderAIAnalysis(ticker, analysis, false);
+    renderPortfolioAI(data, false);
   } catch (e) {
-    container.innerHTML = `<div style="margin-top:.6rem;padding:.6rem .7rem;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);border-radius:8px;font-size:.7rem;color:#f87171">⚠ ${e.message}</div>`;
+    container.innerHTML = `<div style="margin-top:.6rem;padding:.6rem .7rem;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);border-radius:8px;font-size:.72rem;color:#f87171">⚠ ${e.message}</div>`;
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = '🔄 วิเคราะห์ใหม่';
+    if (btn) { btn.disabled = false; btn.innerHTML = '🔄 วิเคราะห์พอร์ตใหม่'; }
   }
 }
 
-function renderAIAnalysis(ticker, a, fromCache) {
-  const sid = safeId(ticker);
-  const container = document.getElementById(`ai-result-${sid}`);
+function renderPortfolioAI(data, fromCache) {
+  const container = document.getElementById('ai-portfolio-result');
   if (!container) return;
   const recColor = { BUY:'#34d399', HOLD:'#fbbf24', SELL:'#f87171' };
   const recBg    = { BUY:'rgba(52,211,153,.12)', HOLD:'rgba(251,191,36,.12)', SELL:'rgba(248,113,113,.12)' };
   const recEmoji = { BUY:'🟢', HOLD:'🟡', SELL:'🔴' };
-  const rec = (a.recommendation || 'HOLD').toUpperCase();
-  const cachedAge = fromCache && aiAnalysisCache[ticker]
-    ? Math.round((Date.now() - aiAnalysisCache[ticker].timestamp) / 60000) + ' นาทีที่แล้ว'
-    : 'เมื่อกี้';
+  const o = data.overall || {};
+  const cachedAge = fromCache && aiAnalysisCache[PORTFOLIO_CACHE_KEY]
+    ? Math.round((Date.now()-aiAnalysisCache[PORTFOLIO_CACHE_KEY].timestamp)/60000)+' นาทีที่แล้ว' : 'เมื่อกี้';
+
+  const holdingsHtml = (Array.isArray(data.holdings)?data.holdings:[]).map(h => {
+    const rec = (h.recommendation||'HOLD').toUpperCase();
+    return `<div style="background:var(--bg);border-radius:10px;padding:.6rem .7rem;margin-bottom:.45rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+        <span style="font-size:.82rem;font-weight:700;color:var(--accent)">${h.ticker||'—'}</span>
+        <span style="font-size:.66rem;font-weight:800;color:${recColor[rec]||recColor.HOLD};background:${recBg[rec]||recBg.HOLD};padding:.12rem .5rem;border-radius:6px">${recEmoji[rec]||'🟡'} ${rec}</span>
+      </div>
+      <div style="font-size:.7rem;color:var(--text);line-height:1.5">${h.reason||''}</div>
+      ${h.risk?`<div style="font-size:.66rem;color:var(--muted);line-height:1.5;margin-top:.2rem">⚠ ${h.risk}</div>`:''}
+    </div>`;
+  }).join('');
 
   container.style.display = 'block';
   container.innerHTML = `
-    <div style="margin-top:.6rem;padding-top:.6rem;border-top:1px dashed rgba(167,139,250,.35)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.45rem">
-        <span style="font-size:.68rem;font-weight:700;color:var(--accent)">🤖 AI Analysis</span>
-        <span style="font-size:.55rem;color:var(--muted)">${cachedAge}</span>
+    <div style="margin-top:.7rem;padding-top:.7rem;border-top:1px dashed rgba(167,139,250,.35)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+        <span style="font-size:.72rem;font-weight:700;color:var(--accent)">🤖 AI วิเคราะห์ทั้งพอร์ต</span>
+        <span style="font-size:.58rem;color:var(--muted)">${cachedAge}</span>
       </div>
-      <div style="background:var(--bg);border-radius:8px;padding:.5rem .65rem;margin-bottom:.45rem">
-        <div style="font-size:.58rem;color:var(--muted);margin-bottom:.18rem">📍 สถานะตอนนี้</div>
-        <div style="font-size:.72rem;line-height:1.55;color:var(--text)">${a.status || '—'}</div>
-      </div>
-      <div style="display:flex;align-items:flex-start;gap:.55rem;background:${recBg[rec]||recBg.HOLD};border-radius:8px;padding:.55rem .65rem;margin-bottom:.45rem">
-        <div style="font-size:1rem">${recEmoji[rec]||'🟡'}</div>
-        <div style="flex:1">
-          <div style="font-size:.78rem;font-weight:800;color:${recColor[rec]||recColor.HOLD};letter-spacing:.5px">${rec}</div>
-          <div style="font-size:.7rem;color:var(--text);line-height:1.5;margin-top:.15rem">${a.recommendationReason || '—'}</div>
+      <div style="background:linear-gradient(135deg,rgba(167,139,250,.14),rgba(167,139,250,.05));border:1px solid rgba(167,139,250,.3);border-radius:12px;padding:.7rem .8rem;margin-bottom:.6rem">
+        <div style="font-size:.74rem;color:var(--text);line-height:1.6;margin-bottom:.5rem">${o.summary||'—'}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem">
+          <div style="background:var(--bg);border-radius:8px;padding:.45rem .55rem"><div style="font-size:.56rem;color:var(--muted)">🎯 น่าสนใจสุด</div><div style="font-size:.78rem;font-weight:700;color:#34d399">${o.topPick||'—'}</div></div>
+          <div style="background:var(--bg);border-radius:8px;padding:.45rem .55rem"><div style="font-size:.56rem;color:var(--muted)">🧩 กระจายความเสี่ยง</div><div style="font-size:.66rem;color:var(--text);line-height:1.4">${o.diversification||'—'}</div></div>
         </div>
+        ${o.biggestRisk?`<div style="font-size:.66rem;color:var(--text);line-height:1.5;margin-top:.45rem;background:rgba(248,113,113,.08);border-radius:8px;padding:.4rem .55rem">⚠ <b style="color:#f87171">เสี่ยงสุด:</b> ${o.biggestRisk}</div>`:''}
       </div>
-      ${Array.isArray(a.risks) && a.risks.length ? `
-      <div style="background:var(--bg);border-radius:8px;padding:.5rem .65rem;margin-bottom:.45rem">
-        <div style="font-size:.58rem;color:var(--muted);margin-bottom:.25rem">⚠ ความเสี่ยง & จุดควรระวัง</div>
-        <div style="font-size:.7rem;line-height:1.65;color:var(--text)">${a.risks.map(r=>'• '+r).join('<br>')}</div>
-      </div>` : ''}
-      ${a.portfolioFit ? `
-      <div style="background:var(--bg);border-radius:8px;padding:.5rem .65rem">
-        <div style="font-size:.58rem;color:var(--muted);margin-bottom:.18rem">📊 เทียบกับพอร์ต</div>
-        <div style="font-size:.7rem;line-height:1.55;color:var(--text)">${a.portfolioFit}</div>
-      </div>` : ''}
-      <div style="font-size:.55rem;color:var(--muted);text-align:right;margin-top:.4rem;font-style:italic">⚠ การวิเคราะห์เพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุนจริง</div>
+      ${holdingsHtml}
+      <div style="font-size:.56rem;color:var(--muted);text-align:right;margin-top:.3rem;font-style:italic">⚠ เพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุนจริง · powered by Groq</div>
     </div>`;
 }
 

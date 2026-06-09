@@ -10,8 +10,9 @@ const API_KEY = '092548iii'; // change this!
 // API KEYS — รวบมาไว้ที่เดียว ใส่ครั้งเดียวที่นี่ ฝั่งแอปไม่ต้องตั้งค่าอีก
 // ────────────────────────────────────────────────────────────
 const FINNHUB_API_KEY = '';   // ← วาง Finnhub key (finnhub.io → Get free API Key)
-const GEMINI_API_KEY  = '';   // ← วาง Gemini key (aistudio.google.com → Get API Key)
-const GEMINI_MODEL    = 'gemini-2.5-flash';
+const GROQ_API_KEY    = '';   // ← วาง Groq key (console.groq.com/keys)
+const GROQ_TEXT_MODEL   = 'llama-3.3-70b-versatile';                 // วิเคราะห์หุ้น (text)
+const GROQ_VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct'; // อ่านสลิป (vision/OCR)
 
 const SHEETS = {
   transactions: 'transactions',
@@ -61,9 +62,9 @@ function doPost(e) {
     if (action === 'addGoal')           return success(addGoal(body));
     if (action === 'updateGoal')        return success(updateGoal(body));
     if (action === 'deleteGoal')        return success(deleteRow(SHEETS.goals, body.id));
-    // ── AI proxy (Gemini key อยู่ใน backend) ──
-    if (action === 'aiText')            return success(geminiText(body.prompt));
-    if (action === 'aiVision')          return success(geminiVision(body.prompt, body.imageBase64, body.mimeType));
+    // ── AI proxy (Groq key อยู่ใน backend) ──
+    if (action === 'aiText')            return success(groqText(body.prompt));
+    if (action === 'aiVision')          return success(groqVision(body.prompt, body.imageBase64, body.mimeType));
     return error('Unknown action');
   } catch (err) {
     return error(err.message);
@@ -349,33 +350,51 @@ function finnhubFx(base) {
 }
 
 // ============================================================
-// PROXY — Gemini (อ่านสลิป + วิเคราะห์หุ้น) · key เก็บใน backend
+// PROXY — Groq (อ่านสลิป + วิเคราะห์หุ้น) · OpenAI-compatible · key ใน backend
 // ============================================================
-function geminiCall(parts) {
-  if (!GEMINI_API_KEY) throw new Error('ยังไม่ได้ตั้ง GEMINI_API_KEY ใน code.gs');
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
-    GEMINI_MODEL + ':generateContent?key=' + GEMINI_API_KEY;
-  const res = UrlFetchApp.fetch(url, {
+function groqChat(messages, model) {
+  if (!GROQ_API_KEY) throw new Error('ยังไม่ได้ตั้ง GROQ_API_KEY ใน code.gs');
+  const res = UrlFetchApp.fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'post',
     contentType: 'application/json',
     muteHttpExceptions: true,
-    payload: JSON.stringify({ contents: [{ parts: parts }] })
+    headers: { Authorization: 'Bearer ' + GROQ_API_KEY },
+    payload: JSON.stringify({
+      model: model,
+      messages: messages,
+      temperature: 0.4,
+      max_completion_tokens: 2048,
+      response_format: { type: 'json_object' }   // บังคับให้ตอบเป็น JSON ล้วน
+    })
   });
   const data = JSON.parse(res.getContentText() || '{}');
-  if (data.error) throw new Error(data.error.message || 'Gemini API error');
-  const text = (((data.candidates || [])[0] || {}).content || {}).parts;
-  return { text: (text && text[0] && text[0].text) ? text[0].text : '' };
+  if (data.error) throw new Error((data.error && data.error.message) || 'Groq API error');
+  const msg = (((data.choices || [])[0] || {}).message || {}).content;
+  return { text: msg || '' };
 }
-function geminiText(prompt) {
+function groqText(prompt) {
   if (!prompt) throw new Error('prompt required');
-  return geminiCall([{ text: prompt }]);
+  return groqChat([{ role: 'user', content: prompt }], GROQ_TEXT_MODEL);
 }
-function geminiVision(prompt, imageBase64, mimeType) {
+function groqVision(prompt, imageBase64, mimeType) {
   if (!prompt || !imageBase64) throw new Error('prompt + image required');
-  return geminiCall([
-    { text: prompt },
-    { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } }
-  ]);
+  return groqChat([{
+    role: 'user',
+    content: [
+      { type: 'text', text: prompt },
+      { type: 'image_url', image_url: { url: 'data:' + (mimeType || 'image/jpeg') + ';base64,' + imageBase64 } }
+    ]
+  }], GROQ_VISION_MODEL);
+}
+
+// ============================================================
+// AUTHORIZE — รันฟังก์ชันนี้ครั้งเดียวใน editor เพื่อขอสิทธิ์ external request
+// (จำเป็นเพราะ Finnhub/Groq ใช้ UrlFetchApp) แล้วค่อย Deploy เวอร์ชันใหม่
+// ============================================================
+function authorizeExternal() {
+  const res = UrlFetchApp.fetch('https://www.google.com/generate_204', { muteHttpExceptions: true });
+  Logger.log('External request OK — HTTP ' + res.getResponseCode());
+  return res.getResponseCode();
 }
 
 // ============================================================
