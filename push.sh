@@ -25,6 +25,15 @@ ver=$(date +%s)
 sed -i '' -E "s#(href=\"styles\.css)(\?v=[0-9]+)?(\")#\1?v=$ver\3#; s#(src=\"app\.js)(\?v=[0-9]+)?(\")#\1?v=$ver\3#" index.html 2>/dev/null \
   || sed -i -E "s#(href=\"styles\.css)(\?v=[0-9]+)?(\")#\1?v=$ver\3#; s#(src=\"app\.js)(\?v=[0-9]+)?(\")#\1?v=$ver\3#" index.html 2>/dev/null
 
+echo "🔒 กัน secret หลุด: ล้าง API key ใน code.gs ก่อน commit (คืนค่าให้ทีหลัง)..."
+KEYBAK=""
+if [ -f code.gs ]; then
+  KEYBAK="$(mktemp)"; cp code.gs "$KEYBAK"
+  sed -i '' -E "s/(FINNHUB_API_KEY[[:space:]]*=[[:space:]]*')[^']*(')/\1\2/; s/(GROQ_API_KEY[[:space:]]*=[[:space:]]*')[^']*(')/\1\2/" code.gs 2>/dev/null \
+    || sed -i -E "s/(FINNHUB_API_KEY[[:space:]]*=[[:space:]]*')[^']*(')/\1\2/; s/(GROQ_API_KEY[[:space:]]*=[[:space:]]*')[^']*(')/\1\2/" code.gs
+  if ! diff -q "$KEYBAK" code.gs >/dev/null 2>&1; then echo "   ⚠ พบ key ใน code.gs — ล้างออกจากเวอร์ชันที่ push แล้ว (ในเครื่องยังอยู่)"; fi
+fi
+
 echo "📦 เก็บงานล่าสุดเข้า commit..."
 git add -A
 if git diff --cached --quiet; then
@@ -47,6 +56,9 @@ git push origin --delete master 2>/dev/null \
   || echo "   (ไม่มี master หรือมันเป็น default branch — ข้าม ไม่เป็นไร)"
 
 git branch -u origin/main 2>/dev/null
+
+# คืน API key ให้ code.gs ในเครื่อง (เก็บไว้ใช้งาน — ไม่ถูก push ขึ้น git)
+if [ -n "$KEYBAK" ] && [ -f "$KEYBAK" ]; then cp "$KEYBAK" code.gs; rm -f "$KEYBAK"; fi
 
 echo ""
 echo "✅ เสร็จแล้ว! เว็บ icepxr.github.io/finance- จะอัปเดตใน ~1 นาที"

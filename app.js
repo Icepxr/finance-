@@ -67,6 +67,22 @@ const setLoading = (btnId, loading) => {
 
 // ── Coffee-cup loader (AI กำลังคิด) ──
 const cupLoaderHTML = (txt='') => `<div style="text-align:center;padding:1rem 0"><div class="cup-loader"><div class="cup"><div class="cup-handle"></div><div class="smoke one"></div><div class="smoke two"></div><div class="smoke three"></div></div></div>${txt?`<div style="font-size:.78rem;color:var(--muted);margin-top:.5rem">${txt}</div>`:''}</div>`;
+// ── Goo loader (SVG metaball ม่วงดำ) — mini=true สำหรับช่องเล็ก ──
+let _gooId = 0;
+const blobLoaderHTML = (txt='', mini=false) => {
+  const id = 'goo' + (++_gooId);
+  const sz = mini ? 36 : 70;
+  const svg = `<svg viewBox="0 0 100 100" width="${sz}" height="${sz}" style="overflow:visible;flex-shrink:0">
+    <defs>
+      <filter id="${id}"><feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b"/><feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -8"/></filter>
+      <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#6d28d9"/></linearGradient>
+    </defs>
+    <g filter="url(#${id})"><rect class="gb1" width="33" height="33" rx="11" fill="url(#${id}g)"/><rect class="gb2" width="33" height="33" rx="11" fill="url(#${id}g)"/></g>
+  </svg>`;
+  return mini
+    ? `<div style="display:flex;align-items:center;gap:.4rem">${svg}<span style="font-size:.75rem;color:var(--muted)">${txt}</span></div>`
+    : `<div style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:.9rem 0">${svg}${txt?`<div style="font-size:.78rem;color:var(--muted)">${txt}</div>`:''}</div>`;
+};
 
 // ── สร้าง span ต่อตัวอักษรให้ floating "wave" label ──
 function initWaveLabels(){
@@ -89,7 +105,8 @@ function initWaveLabels(){
 const ICON_FILE = {
   Food:'food', Transport:'transport', Shopping:'shopping', Bills:'bills', Education:'education',
   Entertainment:'Entertainment', Investment:'investment', Salary:'salary', Freelance:'freelance', Other:'other',
-  Bitcoin:'bitcoin', ETF:'etf', Gold:'gold', Stock:'stock', Savings:'savings'
+  Bitcoin:'bitcoin', ETF:'etf', Gold:'gold', Stock:'stock', Savings:'savings',
+  Goal:'target', AI:'AI', Edit:'edit'
 };
 const LABELS = {
   Salary:'Salary', Freelance:'Freelance', Food:'Food', Transport:'Transport', Shopping:'Shopping',
@@ -487,7 +504,7 @@ function txRow(t, showDelete=false) {
       <div style="font-size:.7rem;color:var(--muted);text-align:right">${t.date}</div>
     </div>
     ${showDelete ? `<div style="display:flex;gap:.3rem">
-      <button onclick="openEditTransaction('${t.id}')" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);color:var(--accent);border-radius:8px;padding:.3rem .5rem;cursor:pointer;font-size:.8rem">✏️</button>
+      <button onclick="openEditTransaction('${t.id}')" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);color:var(--accent);border-radius:8px;padding:.3rem .5rem;cursor:pointer;font-size:.8rem"><img class="ic" src="assets/edit.png" style="width:14px;height:14px"></button>
       <button onclick="deleteTransaction('${t.id}')" style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:#f87171;border-radius:8px;padding:.3rem .5rem;cursor:pointer;font-size:.8rem">✕</button>
     </div>` : ''}
   </div>`;
@@ -613,39 +630,38 @@ async function syncFromSheet() {
 
     let updated = false;
 
+    // Sheet = source of truth · กันซ้ำทั้งโดย id และโดยเนื้อหา (เคลียร์ของซ้ำเดิมที่ id ไม่ตรง)
     if (txRes.success && Array.isArray(txRes.data)) {
-      // merge: Sheet เป็น source of truth, ไม่ overwrite local ที่ยังไม่ได้ sync
+      const sig = t => `${t.date}|${t.type}|${t.category}|${Number(t.amount)}|${t.note||''}`;
       const sheetIds = new Set(txRes.data.map(t => t.id));
-      const localOnly = state.transactions.filter(t => !sheetIds.has(t.id));
+      const sheetSigs = new Set(txRes.data.map(sig));
+      const localOnly = state.transactions.filter(t => !sheetIds.has(t.id) && !sheetSigs.has(sig(t)));
       state.transactions = [
-        ...txRes.data.map(t => ({
-          ...t,
-          amount: Number(t.amount)
-        })),
+        ...txRes.data.map(t => ({ ...t, amount: Number(t.amount) })),
         ...localOnly
-      ].sort((a,b) => b.created_at?.localeCompare(a.created_at));
+      ].sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
       updated = true;
     }
 
     if (invRes.success && Array.isArray(invRes.data)) {
+      const sig = i => `${i.date}|${i.asset}|${Number(i.amount)}|${i.note||''}`;
       const sheetIds = new Set(invRes.data.map(i => i.id));
-      const localOnly = state.investments.filter(i => !sheetIds.has(i.id));
+      const sheetSigs = new Set(invRes.data.map(sig));
+      const localOnly = state.investments.filter(i => !sheetIds.has(i.id) && !sheetSigs.has(sig(i)));
       state.investments = [
         ...invRes.data.map(i => ({ ...i, amount: Number(i.amount) })),
         ...localOnly
-      ].sort((a,b) => b.created_at?.localeCompare(a.created_at));
+      ].sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
       updated = true;
     }
 
     if (goalRes.success && Array.isArray(goalRes.data)) {
+      const sig = g => `${g.goal_name}|${Number(g.target_amount)}`;
       const sheetIds = new Set(goalRes.data.map(g => g.id));
-      const localOnly = state.goals.filter(g => !sheetIds.has(g.id));
+      const sheetSigs = new Set(goalRes.data.map(sig));
+      const localOnly = state.goals.filter(g => !sheetIds.has(g.id) && !sheetSigs.has(sig(g)));
       state.goals = [
-        ...goalRes.data.map(g => ({
-          ...g,
-          target_amount:  Number(g.target_amount),
-          current_amount: Number(g.current_amount)
-        })),
+        ...goalRes.data.map(g => ({ ...g, target_amount: Number(g.target_amount), current_amount: Number(g.current_amount) })),
         ...localOnly
       ];
       updated = true;
@@ -683,9 +699,13 @@ function extractTicker(note) {
 }
 
 // ดึง ticker จาก note ของ investment ที่ผู้ใช้ใส่จริง — ไม่มี hardcode รายชื่อหุ้น
+// วิเคราะห์เฉพาะหุ้น + กองทุน (ไม่รวม Bitcoin/Gold/Savings)
+const ANALYZE_ASSETS = ['Stock', 'ETF'];
+
 function getUserHeldTickers() {
   const map = new Map();
   state.investments.forEach(i => {
+    if (!ANALYZE_ASSETS.includes(i.asset)) return;
     const t = extractTicker(i.note);
     if (!t) return;
     if (!map.has(t)) map.set(t, { ticker:t, name:t });
@@ -720,19 +740,33 @@ async function fetchCandles(ticker) {
   return r.success ? r.data : {};
 }
 
-async function refreshAllQuotes() {
-  if (!CONFIG.hasBackend) return;
-  await fetchUSDTHB();
+let isRefreshing = false;
+async function refreshAllQuotes(manual = false) {
+  if (!CONFIG.hasBackend) { if (manual) toast('เชื่อมต่อ Backend URL ในหน้า Settings ก่อน', false); return; }
+  if (isRefreshing) return;
+  isRefreshing = true;
   const heldTickers = getUserHeldTickers();
-  for (const p of heldTickers) {
-    try {
-      const q = await fetchQuote(p.ticker);
-      if (q && q.c) liveQuotes[p.ticker] = q;
-    } catch(e) {}
-    await new Promise(res => setTimeout(res, 300)); // throttle
+  const rbtn = document.getElementById('btn-refresh-quotes');
+  const mEl  = document.getElementById('market-cards');
+  if (manual) {
+    if (rbtn) rbtn.disabled = true;
+    if (mEl && heldTickers.length) mEl.innerHTML = `<div style="grid-column:1/-1">${blobLoaderHTML('กำลังดึงราคาล่าสุด...')}</div>`;
   }
-  renderMarketCards();
-  renderPortfolioSummary();
+  try {
+    await fetchUSDTHB();
+    for (const p of heldTickers) {
+      try {
+        const q = await fetchQuote(p.ticker);
+        if (q && q.c) liveQuotes[p.ticker] = q;
+      } catch(e) {}
+      await new Promise(res => setTimeout(res, 300)); // throttle
+    }
+    renderMarketCards();
+    renderPortfolioSummary();
+  } finally {
+    isRefreshing = false;
+    if (rbtn) rbtn.disabled = false;
+  }
 }
 
 function startAutoRefresh() {
@@ -748,6 +782,7 @@ function getHoldings() {
   // รวม investment ตาม ticker ที่อยู่ใน note (กลุ่มเดียวกับ getUserHeldTickers)
   const result = {};
   state.investments.forEach(i => {
+    if (!ANALYZE_ASSETS.includes(i.asset)) return;
     const t = extractTicker(i.note);
     if (!t) return;
     if (!result[t]) result[t] = { invested: 0, entries: 0 };
@@ -895,7 +930,7 @@ function renderMarketCards() {
         </div>
       </div>` : `
       <div style="background:var(--bg);border-radius:8px;padding:.7rem .75rem;display:flex;align-items:center;gap:.5rem">
-        ${CONFIG.hasBackend ? '<span style="font-size:.75rem;color:var(--muted)">⏳ กำลังโหลดราคา...</span>' : '<span style="font-size:.75rem;color:var(--muted)">⚙️ เชื่อมต่อ Backend URL ในหน้า Settings</span>'}
+        ${CONFIG.hasBackend ? blobLoaderHTML('กำลังโหลดราคา...', true) : '<span style="font-size:.75rem;color:var(--muted)">⚙️ เชื่อมต่อ Backend URL ในหน้า Settings</span>'}
       </div>`}
     </div>`
   }).join('');
@@ -905,27 +940,29 @@ function renderMarketCards() {
 // AI ANALYSIS (Groq) — วิเคราะห์ทั้งพอร์ตทีเดียว
 // ============================================================
 const PORTFOLIO_CACHE_KEY = '__portfolio__';
+let isAnalyzing = false;
 
-async function analyzePortfolioWithAI() {
+// useCache=true เฉพาะตอนเปิดอัตโนมัติ — กดปุ่มเอง = วิเคราะห์ใหม่เสมอ
+async function analyzePortfolioWithAI(useCache = false) {
   if (!CONFIG.hasBackend) { toast('เชื่อมต่อ Backend URL ในหน้า Settings ก่อน', false); return; }
   const btn = document.getElementById('btn-ai-portfolio');
   const container = document.getElementById('ai-portfolio-result');
   if (!container) return;
+  if (isAnalyzing) return;   // กันกดรัวซ้อน
 
   const holdings = getHoldings();
   const heldTickers = Object.keys(holdings);
   if (!heldTickers.length) { toast('ยังไม่มีหุ้นในพอร์ต — เพิ่ม investment พร้อม ticker ก่อน', false); return; }
 
-  // cache 1 ชั่วโมง
-  const cached = aiAnalysisCache[PORTFOLIO_CACHE_KEY];
-  if (cached && (Date.now() - cached.timestamp) < AI_CACHE_TTL) {
-    renderPortfolioAI(cached.data, true);
-    return;
+  if (useCache) {
+    const cached = aiAnalysisCache[PORTFOLIO_CACHE_KEY];
+    if (cached && (Date.now() - cached.timestamp) < AI_CACHE_TTL) { renderPortfolioAI(cached.data, true); return; }
   }
 
-  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ AI กำลังวิเคราะห์ทั้งพอร์ต...'; }
+  isAnalyzing = true;
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ AI กำลังวิเคราะห์...'; }
   container.style.display = 'block';
-  container.innerHTML = `<div style="background:var(--bg);border-radius:10px;margin-top:.6rem;padding:.4rem">${cupLoaderHTML('กำลังวิเคราะห์ ' + heldTickers.length + ' หุ้น พร้อมภาพรวมพอร์ต...')}</div>`;
+  container.innerHTML = `<div style="background:var(--bg);border-radius:12px;margin-top:.6rem;padding:.6rem">${blobLoaderHTML('กำลังวิเคราะห์ ' + heldTickers.length + ' หุ้น พร้อมภาพรวมพอร์ต...')}</div>`;
 
   try {
     const totalInvested = Object.values(holdings).reduce((s,x)=>s+(x.invested||0),0);
@@ -968,6 +1005,7 @@ ${lines}
   } catch (e) {
     container.innerHTML = `<div style="margin-top:.6rem;padding:.6rem .7rem;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);border-radius:8px;font-size:.72rem;color:#f87171">⚠ ${e.message}</div>`;
   } finally {
+    isAnalyzing = false;
     if (btn) { btn.disabled = false; btn.innerHTML = '<img class="ic-btn" src="assets/refresh.png"> วิเคราะห์พอร์ตใหม่'; }
   }
 }
@@ -998,13 +1036,13 @@ function renderPortfolioAI(data, fromCache) {
   container.innerHTML = `
     <div style="margin-top:.7rem;padding-top:.7rem;border-top:1px dashed rgba(167,139,250,.35)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
-        <span style="font-size:.72rem;font-weight:700;color:var(--accent)">🤖 AI วิเคราะห์ทั้งพอร์ต</span>
+        <span style="font-size:.72rem;font-weight:700;color:var(--accent);display:inline-flex;align-items:center;gap:.35rem">${icon('AI',16)} AI วิเคราะห์ทั้งพอร์ต</span>
         <span style="font-size:.58rem;color:var(--muted)">${cachedAge}</span>
       </div>
       <div style="background:linear-gradient(135deg,rgba(167,139,250,.14),rgba(167,139,250,.05));border:1px solid rgba(167,139,250,.3);border-radius:12px;padding:.7rem .8rem;margin-bottom:.6rem">
         <div style="font-size:.74rem;color:var(--text);line-height:1.6;margin-bottom:.5rem">${o.summary||'—'}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem">
-          <div style="background:var(--bg);border-radius:8px;padding:.45rem .55rem"><div style="font-size:.56rem;color:var(--muted)">🎯 น่าสนใจสุด</div><div style="font-size:.78rem;font-weight:700;color:#34d399">${o.topPick||'—'}</div></div>
+          <div style="background:var(--bg);border-radius:8px;padding:.45rem .55rem"><div style="font-size:.56rem;color:var(--muted);display:flex;align-items:center;gap:.3rem">${icon('Goal',12)} น่าสนใจสุด</div><div style="font-size:.78rem;font-weight:700;color:#34d399">${o.topPick||'—'}</div></div>
           <div style="background:var(--bg);border-radius:8px;padding:.45rem .55rem"><div style="font-size:.56rem;color:var(--muted)">🧩 กระจายความเสี่ยง</div><div style="font-size:.66rem;color:var(--text);line-height:1.4">${o.diversification||'—'}</div></div>
         </div>
         ${o.biggestRisk?`<div style="font-size:.66rem;color:var(--text);line-height:1.5;margin-top:.45rem;background:rgba(248,113,113,.08);border-radius:8px;padding:.4rem .55rem">⚠ <b style="color:#f87171">เสี่ยงสุด:</b> ${o.biggestRisk}</div>`:''}
@@ -1131,7 +1169,7 @@ function renderInvestments() {
           <div style="font-size:.85rem;font-weight:600;color:var(--accent)">${fmt(i.amount)}</div>
           ${i.note ? `<div style="font-size:.65rem;color:var(--muted)">${i.note}</div>` : ''}
         </div>
-        <button onclick="openEditInvestment('${i.id}')" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);color:var(--accent);border-radius:8px;padding:.3rem .5rem;cursor:pointer;font-size:.75rem">✏️</button>
+        <button onclick="openEditInvestment('${i.id}')" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);color:var(--accent);border-radius:8px;padding:.3rem .5rem;cursor:pointer;font-size:.75rem"><img class="ic" src="assets/edit.png" style="width:14px;height:14px"></button>
       </div>
     </div>
   `).join('') || '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.8rem">No records</div>';
@@ -1223,7 +1261,7 @@ async function updateGoalAmount(id) {
 function renderGoals() {
   const el = document.getElementById('goals-grid');
   if (!state.goals.length) {
-    el.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">No goals yet. Set one and start saving! 🎯</div>';
+    el.innerHTML = `<div class="card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)"><div style="display:flex;align-items:center;justify-content:center;gap:.5rem">${icon('Goal',20)} <span>ยังไม่มีเป้าหมาย — ตั้งสักอันแล้วเริ่มออมกัน!</span></div></div>`;
     return;
   }
   el.innerHTML = state.goals.map(g => {
@@ -1232,7 +1270,7 @@ function renderGoals() {
     return `<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">
         <div>
-          <div style="font-size:.95rem;font-weight:600">🎯 ${g.goal_name}</div>
+          <div style="font-size:.95rem;font-weight:600;display:flex;align-items:center;gap:.45rem">${icon('Goal',18)} ${g.goal_name}</div>
           ${g.deadline ? `<div style="font-size:.72rem;color:${daysLeft<30?'#fbbf24':'var(--muted)'};margin-top:.2rem">${daysLeft>0?daysLeft+' days left':'Deadline passed'}</div>` : ''}
         </div>
         <button onclick="deleteGoal('${g.id}')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:.9rem">✕</button>

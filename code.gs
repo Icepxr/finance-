@@ -199,6 +199,11 @@ function uid() {
   return Utilities.getUuid().replace(/-/g, '').slice(0, 12);
 }
 
+// ใช้ id ที่ client ส่งมา (ถ้ามีและ valid) เพื่อให้ id ตรงกัน → sync ไม่ได้ข้อมูลซ้ำ
+function useId(body) {
+  return (body && body.id && /^[A-Za-z0-9]{1,40}$/.test(String(body.id))) ? String(body.id) : uid();
+}
+
 // ============================================================
 // TRANSACTIONS
 // ============================================================
@@ -219,7 +224,7 @@ function addTransaction(body) {
   if (!VALID_CATS.includes(cat)) throw new Error('Invalid category');
 
   const row = [
-    uid(),
+    useId(body),
     new Date().toISOString(),
     validateDate(body.date),
     type,
@@ -249,7 +254,7 @@ function addInvestment(body) {
   if (!VALID_ASSETS.includes(asset)) throw new Error('Invalid asset');
 
   const row = [
-    uid(),
+    useId(body),
     new Date().toISOString(),
     validateDate(body.date),
     asset,
@@ -277,7 +282,7 @@ function addGoal(body) {
   if (!name) throw new Error('Goal name required');
 
   const row = [
-    uid(),
+    useId(body),
     name,
     validateAmount(body.target_amount),
     parseFloat(body.current_amount) || 0,
