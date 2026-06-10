@@ -3,8 +3,8 @@
 // Deploy as: Web App > Execute as: Me > Who has access: Anyone
 // ============================================================
 
-const SPREADSHEET_ID = '11YucgCCLEhuQ8Iao_BJlk-jn4cK1q7Q-QE5e-c0ifGM';
-const API_KEY = '092548iii'; // change this!
+const SPREADSHEET_ID = ''; // change this!
+const API_KEY = ''; // change this!
 
 // ────────────────────────────────────────────────────────────
 // API KEYS — รวบมาไว้ที่เดียว ใส่ครั้งเดียวที่นี่ ฝั่งแอปไม่ต้องตั้งค่าอีก
